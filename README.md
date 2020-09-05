@@ -20,7 +20,8 @@ as it is a very useful data structure to have, it's versatile, and it's fast.
 My goal with <code>cgcs_vector_ptr</code> is to have a data structure<br>
 that can be just as useful, when you must program in C.
 
-I have been down this rabbit hole before, with one of my previous repositories, <code>gcslib</code>, which was meant to be an entire container library for C, which was loosely inspired by the C++ STL.<br>
+I have been down this rabbit hole before, with one of my previous repositories,<br>
+<code>gcslib</code>, which was meant to be an entire container library for C, which was loosely inspired by the C++ STL.<br>
 Over time, I ended up abandoning it, realizing that I had over engineered everything. 
 
 In practice, all I ever really needed was a useful "vector" data structure,<br>
@@ -37,10 +38,12 @@ and this new repo is pretty much picking up where I left off with <code>test__vp
 
 ## How is it implemented
 
-Often times while writing in C, large objects (instances of <code>struct</code>), or strings (represented as <code>char *</code>) have to be dynamically allocated. We do not have constructors/destructors, references, or RAII in C.
+Often times while writing in C, large objects (instances of <code>struct</code>),<br>
+or strings (represented as <code>char *</code>) have to be dynamically allocated.<br>
+We do not have constructors/destructors, references, or RAII in C.
 
-Since pointers are weakly-typed in C,<br>
-I have decided to implement <code>cgcs_vptr_t</code> as follows:
+I have decided to implement <code>cgcs_vptr_t</code> as follows<br>
+(The memory layout is inspired from the GCC implementation of <code>std::vector</code>)
 
 ```
 typedef struct cgcs_vector_ptr cgcs_vptr_t;
@@ -117,7 +120,8 @@ int main(int argc, const char *argv[]) {
     cgcs_vptr_iter_t end = cgcs_vptr_end(&vec);
     char **curr = NULL;
 
-    while ((curr = it++) != end) {
+    while (it < end) {
+        curr = (char **)(it++);
         printf("iterator: %s\n", *curr);
         free(*curr);
     }
@@ -201,7 +205,8 @@ int main(int argc, const char *argv[]) {
     vptr_iter_t end = vptr_end(&vec);
     char **curr = NULL;
 
-    while ((curr = it++) != end) {
+    while (it < end) {
+        curr = (char **)(it);
         printf("iterator: %s\n", *curr);
         free(*curr);
     }
