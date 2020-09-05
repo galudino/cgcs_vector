@@ -117,7 +117,10 @@ set(WERR "-Werror")
 
 set(PEDANTIC "-pedantic-errors")
 
-set(CFLAGS "${WALL} ${WERR} ${PEDANTIC}")
+set(SANITIZED "-fsanitize=address")
+set(FRAMENO	"-fno-omit-frame-pointer")
+
+set(CFLAGS "${WALL} ${WERR} ${PEDANTIC} ${SANITIZED} ${FRAMENO}")
 
 ###########################################################################
 ##  Configuration                                                        ##
