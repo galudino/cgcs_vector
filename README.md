@@ -68,11 +68,16 @@ Each block is <code>sizeof(void *)</code> bytes large.</b>
 
 - ### <code><b>typedef void *</b> voidptr</code>
 
-    <code>m_start</code> in <code><b>struct</b> cgcs_vector_base_ptr</code> is a pointer that addresses a <b>buffer of pointers</b>. By aliasing <code><b>void *</b></code>, I believe this idea is made clearer.
+    <code>m_start</code> in <code><b>struct</b> cgcs_vector_base_ptr</code><br>
+    is a pointer that addresses a <b>buffer of pointers</b>.<br>
+    By aliasing <code><b>void *</b></code>, I believe this idea is made clearer.
 
-    <code>m_finish</code> addresses one-past the last block in <code>m_start</code>. If <code>m_start</code> and <code>m_finish</code> are the same address, <code>m_start</code> is an empty buffer.
+    <code>m_finish</code> addresses one-past the last block in <code>m_start</code>.<br>
+    If <code>m_start</code> and <code>m_finish</code> are the same address, <code>m_start</code> is an empty buffer.
 
-    <code>m_end_of_storage</code> addresses the last block in <code>m_start</code>. If <code>m_finish</code> and <code>m_end_of_storage</code> are the same address, the buffer will be full after using the space at <code>m_finish</code>.
+    <code>m_end_of_storage</code> addresses the last block in <code>m_start</code>.<br>
+    If <code>m_finish</code> and <code>m_end_of_storage</code> are the same address,<br>
+    the buffer will be full after using the space at <code>m_finish</code>.
 
 - ### <code><b>typedef</b> voidptr *cgcs_vptr_iter_t</code>
 
@@ -85,7 +90,9 @@ Since the C language does not have the <code>namespace</code> concept,<br>
 we can 'fake' it by prefixing <code>cgcs_</code> to all of the <code><b>struct</b></code> types, functions, etc.
 
 <code>gcslib</code> was my old C container library;<br>
-I have been using '<code>gcs</code>' to prefix/namespace much of my work.<br>Since I have been using '<code>gcs</code>' in my C++ libraries as well,<br>I am using '<code>cgcs</code>' to denote that this is a C library.
+I have been using '<code>gcs</code>' to prefix/namespace much of my work.<br>
+Since I have been using '<code>gcs</code>' in my C++ libraries as well,<br>
+I am using '<code>cgcs</code>' to denote that this is a C library.
 
 <code>cgcs::vptr_t</code> is 'approximated' using
 ```
@@ -141,7 +148,8 @@ Then, we are going to create 3 strings, dynamically allocated, client-side.<br>
 We'll push each string using the <code>pushb</code> function, which is short for <b>push_back</b>.<br>
 Notice we provide the <b>address of <code>str</code></b>.
 
-We are transferring ownership of these pointers<br> to <code>vec</code>, but we must deallocate the memory for these strings at some point<br>
+We are transferring ownership of these pointers<br> to <code>vec</code>,<br>
+but we must deallocate the memory for these strings at some point<br>
 when we are finished with them.
 
 Next, we iterate over <code>vec</code>, by retrieving its <b>iterators</b>.<br>
@@ -150,16 +158,8 @@ Iterator retrieval is merely a notational convenience, since<br>
 the <code>begin</code> function returns the <code>m_start</code> field,<br>
 and the <code>end</code> function returns the <code>m_finish</code> field.<br>
 
-The <code>begin</code> and <code>end</code> functions return said fields as <code><b>void *</b></code>,<br>
-unlike the <code><b>void **</b></code> that they really are. Returning them as <code><b>void *</b></code><br>
-allows easy assignment to any typed pointer.
-
-In <code>(curr = it++)</code>, <code>curr</code> is assigned the current iterator value,<br>
-(no typecast required), and then the iterator is advanced.<br>
-We dereference <code>curr</code>, print it, then <code>free</code> the deferenced pointer.<br>
-This repeats until <code>curr == end</code>.
-
-Finally, we call the <code>deinit</code> function on <code>&vec</code>,<br>
+After we iterate over the pointers, print them, and then free them --<br>
+we call the <code>deinit</code> function on <code>&vec</code>,<br>
 which will free <code>vec</code>'s internal buffer.
 
 ### Approximating the <code>using</code> statement from C++
