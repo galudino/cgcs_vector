@@ -70,6 +70,7 @@ vptr_t *vptr_init(vptr_t *self, size_t capacity) {
 */
 vptr_t *vptr_deinit(vptr_t *self) {
     // Pointees are not managed by deinit.
+    //
     // If you want to free the memory addressed by each pointer
     // in vptr's buffer, run a "destroy" function on each element
     // using vptr_foreach -- or iterate over all elements manually
@@ -144,6 +145,8 @@ voidptr vptr_front(vptr_t *self) {
     \endcode
 */
 voidptr vptr_back(vptr_t *self) {
+    // m_finish is the address of one-past the last element;
+    // we subtract m_finish by 1 to get the element at the back of vptr_t.
     return self->m_impl.m_finish - 1;
 }
 
@@ -244,8 +247,8 @@ bool vptr_resize(vptr_t *self, size_t n) {
     \return
 */
 bool vptr_shrink_to_fit(vptr_t *self) {
-    size_t capacity = vptr_capacity(self);
-    size_t size = vptr_size(self);
+    const size_t capacity = vptr_capacity(self);
+    const size_t size = vptr_size(self);
 
     return (capacity > size) ? vptr_resize(self, size) : false;
 }
@@ -258,6 +261,7 @@ bool vptr_shrink_to_fit(vptr_t *self) {
     \return
 */
 vptr_iter_t vptr_begin(vptr_t *self) {
+    // Same as vptr_front.
     return self->m_impl.m_start;
 }
 
@@ -269,6 +273,7 @@ vptr_iter_t vptr_begin(vptr_t *self) {
     \return
 */
 vptr_iter_t vptr_end(vptr_t *self) {
+    // Same as vptr_back(self) + 1.
     return self->m_impl.m_finish;
 }
 
@@ -282,14 +287,13 @@ vptr_iter_t vptr_end(vptr_t *self) {
     \return
 */
 vptr_iter_t vptr_insert(vptr_t *self, vptr_iter_t it, const void *valaddr) {
-    const voidptr *val = valaddr;
-
     if (cgcs_vector_base_ptr_full_capacity(&(self->m_impl))) {
         size_t position = it - self->m_impl.m_start;
         vptr_resize(self, vptr_capacity(self) * 2);
 
         // it must be updated if this vector is resized,
         // since we use it's address in memmove.
+        //
         // Without this reassignment, memmove will not work properly,
         // because it is assumed that it points to some address within
         // [ vptr_begin(self), vptr_end(self) )
@@ -299,8 +303,11 @@ vptr_iter_t vptr_insert(vptr_t *self, vptr_iter_t it, const void *valaddr) {
     // memmove(dst, src, block size)
     // We move everything from [it, m_finish) one block over right.
     memmove(it + 1, it, sizeof *it * (self->m_impl.m_finish - it));
-    *(it) = *(val);
 
+    // We've made room for the new element, so we make the assignment now.
+    *(it) = *(void **)(valaddr);
+
+    // Finally, we advance the m_finish address one block.
     ++self->m_impl.m_finish;
 
     return it;
@@ -318,7 +325,7 @@ vptr_iter_t vptr_insert(vptr_t *self, vptr_iter_t it, const void *valaddr) {
 */
 vptr_iter_t vptr_insert_range(vptr_t *self, vptr_iter_t it, vptr_iter_t beg,
                               vptr_iter_t end) {
-    size_t count = end - beg;
+    const size_t count = end - beg;
     size_t curr_capacity = vptr_capacity(self);
 
     if (vptr_size(self) + count > curr_capacity) {
@@ -334,10 +341,10 @@ vptr_iter_t vptr_insert_range(vptr_t *self, vptr_iter_t it, vptr_iter_t beg,
     // We move everything from [it, m_finish) (m_finish - it) blocks over right.
     memmove(it + count, it, sizeof *it * (self->m_impl.m_finish - it));
 
-    while (beg < end) {
-        *(it++) = *(beg++);
-    }
+    // Now we copy the contents in range [beg, end) at position it.
+    memcpy(it, beg, sizeof *it * count);
 
+    // Finally, we advance the m_finish address count blocks.
     self->m_impl.m_finish += count;
 
     return it;
@@ -353,9 +360,12 @@ vptr_iter_t vptr_insert_range(vptr_t *self, vptr_iter_t it, vptr_iter_t beg,
 */
 vptr_iter_t vptr_erase(vptr_t *self, vptr_iter_t it) {
     if (vptr_empty(self) == false) {
+        const size_t move_element_count = self->m_impl.m_finish - it;
         // memmove(dst, src, block size)
-        // We move everything from [it + 1, m_finish) one block over left.
-        memmove(it, it + 1, sizeof *it * (self->m_impl.m_finish - it));
+        // We move everything from [it + 1, m_finish) one block over to the left.
+        memmove(it, it + 1, sizeof *it * move_element_count);
+
+        // Finally, we decrement the m_finish address one block.
         --self->m_impl.m_finish;
     }
 
@@ -373,9 +383,13 @@ vptr_iter_t vptr_erase(vptr_t *self, vptr_iter_t it) {
 */
 vptr_iter_t vptr_erase_range(vptr_t *self, vptr_iter_t beg, vptr_iter_t end) {
     if (vptr_empty(self) == false) {
-        size_t count = end - beg;
+        const size_t move_element_count = self->m_impl.m_finish - beg;
+        const size_t count = end - beg;
         // memmove(dst, src, block size)
-        memmove(beg, end, sizeof *beg * (self->m_impl.m_finish - beg));
+        // We move everything from [end, m_finish) one block over to the left.
+        memmove(beg, end, sizeof *beg * move_element_count);
+
+        // Finally, we decrement the m_finish address count blocks.
         self->m_impl.m_finish -= count;
     }
 
@@ -389,13 +403,11 @@ vptr_iter_t vptr_erase_range(vptr_t *self, vptr_iter_t beg, vptr_iter_t end) {
     \param[in]  valaddr
 */
 void vptr_pushb(vptr_t *self, const void *valaddr) {
-    const voidptr *val = valaddr;
-
     if (cgcs_vector_base_ptr_full_capacity(&(self->m_impl))) {
         vptr_resize(self, vptr_capacity(self) * 2);
     }
 
-    *(self->m_impl.m_finish++) = *(val);
+    *(self->m_impl.m_finish++) = *(void **)(valaddr);
 }
 
 /*!
@@ -405,6 +417,7 @@ void vptr_pushb(vptr_t *self, const void *valaddr) {
 */
 void vptr_popb(vptr_t *self) {
     if (vptr_empty(self) == false) {
+        // We simply move m_finish one block to the left.
         --self->m_impl.m_finish;
     }
 }
@@ -416,19 +429,16 @@ void vptr_popb(vptr_t *self) {
     \param[in]  valaddr
 */
 void vptr_pushf(vptr_t *self, const void *valaddr) {
-    const voidptr *val = valaddr;
-
-    size_t capacity = vptr_capacity(self);
-
     if (cgcs_vector_base_ptr_full_capacity(&(self->m_impl))) {
-        vptr_resize(self, capacity * 2);
+        vptr_resize(self, vptr_capacity(self) * 2);
     }
 
-    memmove(self->m_impl.m_start + 1, self->m_impl.m_start,
-            sizeof *self->m_impl.m_start * vptr_capacity(self));
+    // memmove(dst, src, block size)    
+    memmove(self->m_impl.m_start + 1, 
+            self->m_impl.m_start, 
+            sizeof *self->m_impl.m_start * vptr_size(self));
 
-    *(self->m_impl.m_start) = *(val);
-    ++self->m_impl.m_finish;
+    *(self->m_impl.m_start) = *(void **)(valaddr);
 }
 
 /*!
@@ -438,9 +448,13 @@ void vptr_pushf(vptr_t *self, const void *valaddr) {
 */
 void vptr_popf(vptr_t *self) {
     if (vptr_empty(self) == false) {
-        memmove(self->m_impl.m_start, self->m_impl.m_start + 1,
-                sizeof *self->m_impl.m_start * vptr_capacity(self));
+        // memmove(dst, src, block size)
+        // We move everything from [m_start + 1, m_finish) one block over to the left.
+        memmove(self->m_impl.m_start, 
+                self->m_impl.m_start + 1, 
+                sizeof *self->m_impl.m_start * vptr_size(self) - 1);
 
+        // Finally, we decrement the m_finish address one block.
         --self->m_impl.m_finish;
     }
 }
@@ -662,4 +676,3 @@ static inline bool
 cgcs_vector_base_ptr_full_capacity(struct cgcs_vector_base_ptr *base) {
     return base->m_finish == base->m_end_of_storage;
 }
-
