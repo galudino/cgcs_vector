@@ -202,4 +202,51 @@ typedef cgcs_vptr_iter_t vptr_iter_t;
 
 #endif /* using_cgcs_vptr */
 
+#ifdef CGCS_VECTOR_PTR_SHORTNAMES
+
+typedef vptr_iter_t viter_t;
+
+#define vinit vptr_init
+#define vdeinit vptr_deinit
+
+#define vfront vptr_front
+#define vback vptr_back
+#define vat vptr_at
+
+#define vi vptr_i
+
+#define vempty vptr_empty
+#define vsize vptr_size
+#define vcapacity vptr_capacity
+#define vresize vptr_resize
+
+#define vbegin vptr_begin
+#define vend vptr_end
+
+#define vinsert vptr_insert
+#define vinsert_range vptr_insert_range
+#define verase vptr_erase
+#define verase_range vptr_erase_range
+
+#define vpushb vptr_pushb
+#define vpopb vptr_popb
+#define vpushf vptr_pushf
+#define vpopf vptr_popf
+#define vclear vptr_clear
+
+#define vforeach vptr_foreach
+#define vforeach_range vptr_foreach_range
+
+#define vsearch vptr_search
+#define vsearch_range vptr_search_range
+#define vfind vptr_find
+#define vfind_range vptr_find_range
+
+#define vqsort_position vptr_qsort_position
+
+#define vnew vptr_new
+#define vdelete vptr_delete
+
+#endif /* CGCS_VECTOR_PTR__SHORT_FUNCNAMES */
+
 #endif /* CGCS_VECTOR_PTR_H */
