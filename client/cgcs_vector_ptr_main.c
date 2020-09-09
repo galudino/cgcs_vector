@@ -27,7 +27,8 @@
     THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define using_cgcs_vptr
+#define using_cgcs_vptr               // removes cgcs_ prefix
+#define CGCS_VECTOR_PTR_SHORTNAMES    // reduces vptr_ prefix to v
 #include "cgcs_vector_ptr.h"
 
 #include <stdio.h>
@@ -40,10 +41,6 @@
     as they are trivial to write -- but they are provided here
     to help demonstrate how vptr_t is used.
 */
-
-
-             
-            
 int cmp_cstr(const void *c0, const void *c1);
 int cmp_int(const void *c0, const void *c1);
 int cmp_double(const void *c0, const void *c1);
@@ -70,61 +67,61 @@ int main(int argc, const char *argv[]) {
     char *s = NULL;
 
     s = strdup("hello");
-    vptr_pushb(v, &s);      // s is shallow-copied.
+    vpushb(v, &s);      // s is shallow-copied.
 
     s = strdup("how");
-    vptr_pushb(v, &s);
+    vpushb(v, &s);
 
     s = strdup("are");
-    vptr_pushb(v, &s);
+    vpushb(v, &s);
 
     s = strdup("you");
-    vptr_pushb(v, &s);
+    vpushb(v, &s);
 
     s = strdup("doing?");
-    vptr_pushb(v, &s);
+    vpushb(v, &s);
 
-    char **fr = vptr_front(v);
+    char **fr = vfront(v);
     printf("front: %s\n", *fr);
     puts("");
 
-    vptr_foreach(v, print_cstr);
+    vforeach(v, print_cstr);
     puts("");
 
     // Creating a vptr_t on the stack.
     vptr_t tmp;
-    vptr_init(&tmp, 3);
+    vinit(&tmp, 3);
 
     const char *strings[] = { "ONE", "TWO", "THREE" };
     for (int i = 0; i < 3; i++) {
         s = strdup(strings[i]);
-        vptr_pushb(&tmp, &s);
+        vpushb(&tmp, &s);
     }
 
     // equivalent to vptr_insert(v, vptr_begin(v) + 3);
-    vptr_insert_range(v, vptr_begin(v) + 3, vptr_begin(&tmp), vptr_end(&tmp));
+    vinsert_range(v, vbegin(v) + 3, vbegin(&tmp), vend(&tmp));
 
     // We no longer need vptr_t tmp, so we call the deinit function on it
     // so its internal buffer can be freed.
-    vptr_deinit(&tmp);
+    vdeinit(&tmp);
 
     // Pushing an element to the front of v.
     s = strdup("front!");
-    vptr_pushf(v, &s);
+    vpushf(v, &s);
 
-    vptr_foreach(v, print_cstr);
+    vforeach(v, print_cstr);
     puts("");
 
-    vptr_popf(v);
+    vpopf(v);
 
-    vptr_foreach(v, print_cstr);
+    vforeach(v, print_cstr);
     puts("");
     
     s = "are";
-    printf("element 'are' is at index: %d\n", vptr_search(v, cmp_cstr, &s));
+    printf("element 'are' is at index: %d\n", vsearch(v, cmp_cstr, &s));
 
     // Freeing all strings in v
-    vptr_foreach(v, free_cstr);
+    vforeach(v, free_cstr);
 
     // You can use the delete macro on v,
     // or do free(vptr_deinit(v));
