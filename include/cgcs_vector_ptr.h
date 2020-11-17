@@ -33,6 +33,7 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 // TODO: Fill in all documentation stubs
 
@@ -73,26 +74,26 @@ struct cgcs_vector_ptr {
 cgcs_vptr_t *cgcs_vptr_init(cgcs_vptr_t *self, size_t capacity);
 cgcs_vptr_t *cgcs_vptr_deinit(cgcs_vptr_t *self);
 
-voidptr cgcs_vptr_front(cgcs_vptr_t *self);
-voidptr cgcs_vptr_back(cgcs_vptr_t *self);
-voidptr cgcs_vptr_at(cgcs_vptr_t *self, const int index);
+static voidptr cgcs_vptr_front(cgcs_vptr_t *self);
+static voidptr cgcs_vptr_back(cgcs_vptr_t *self);
+static voidptr cgcs_vptr_at(cgcs_vptr_t *self, const int index);
+static voidptr cgcs_vptr_i(cgcs_vptr_t *self, size_t index);
 
-#define cgcs_vptr_i(self, index) (((self)->(m_impl.m_start)) + (index))
-
-bool cgcs_vptr_empty(cgcs_vptr_t *self);
-size_t cgcs_vptr_size(cgcs_vptr_t *self);
-size_t cgcs_vptr_capacity(cgcs_vptr_t *self);
+static bool cgcs_vptr_empty(cgcs_vptr_t *self);
+static size_t cgcs_vptr_size(cgcs_vptr_t *self);
+static size_t cgcs_vptr_capacity(cgcs_vptr_t *self);
 
 bool cgcs_vptr_resize(cgcs_vptr_t *self, size_t n);
 bool cgcs_vptr_shrink_to_fit(cgcs_vptr_t *self);
 
-cgcs_vptr_iter_t cgcs_vptr_begin(cgcs_vptr_t *self);
-cgcs_vptr_iter_t cgcs_vptr_end(cgcs_vptr_t *self);
+static cgcs_vptr_iter_t cgcs_vptr_begin(cgcs_vptr_t *self);
+static cgcs_vptr_iter_t cgcs_vptr_end(cgcs_vptr_t *self);
 
 cgcs_vptr_iter_t cgcs_vptr_insert(cgcs_vptr_t *self, cgcs_vptr_iter_t it,
                                   const void *valaddr);
 
-cgcs_vptr_iter_t cgcs_vptr_insert_range(cgcs_vptr_t *self, cgcs_vptr_iter_t it,
+cgcs_vptr_iter_t cgcs_vptr_insert_range(cgcs_vptr_t *self,
+                                        cgcs_vptr_iter_t it,
                                         cgcs_vptr_iter_t beg,
                                         cgcs_vptr_iter_t end);
 
@@ -110,7 +111,7 @@ void cgcs_vptr_clear(cgcs_vptr_t *self);
 
 void cgcs_vptr_foreach(cgcs_vptr_t *self, void *(*func)(void *));
 
-void cgcs_vptr_foreach_range(cgcs_vptr_t *self, void *(*func)(void *),
+static void cgcs_vptr_foreach_range(cgcs_vptr_t *self, void *(*func)(void *),
                              cgcs_vptr_iter_t beg, cgcs_vptr_iter_t end);
 
 int cgcs_vptr_search(cgcs_vptr_t *self,
@@ -132,27 +133,232 @@ cgcs_vptr_iter_t cgcs_vptr_find_range(cgcs_vptr_t *self,
                                       cgcs_vptr_iter_t end);
 
 void cgcs_vptr_qsort(cgcs_vptr_t *self,
-                     int (*cmpfn)(const void *, const void *));
+                            int (*cmpfn)(const void *, const void *));
 
 void cgcs_vptr_qsort_position(cgcs_vptr_t *self,
-                              int (*cmpfn)(const void *, const void *),
-                              cgcs_vptr_iter_t pos);
+                                     int (*cmpfn)(const void *, const void *),
+                                     cgcs_vptr_iter_t pos);
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+
+    \code
+        vptr_t *vec = vptr_new(capacity);
+        char *str = NULL;
+       
+        str = strdup("front string"); // str is allocated by the caller
+        vptr_pushb(vec, &str);        // &str is a (char **)
+
+        str = strdup("back string");
+        vptr_pushb(vec, &str);
+
+        // Retrieve "front string".
+        // vptr_front returns a (void *), which makes this assignment possible.
+        char **get = vptr_front(vec);
+
+        // Run free_str on all pointers in vec.
+        // free_str is a wrapper for free().
+        vptr_foreach(vec, free_str);
+        
+        // Now that the memory addressed by each pointer is freed,
+        // we can destroy, then free vec.
+        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+    \endcode
+*/
+static inline voidptr cgcs_vptr_front(cgcs_vptr_t *self) {
+    return self->m_impl.m_start;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+
+    \code
+        vptr_t *vec = vptr_new(capacity);
+        char *str = NULL;
+       
+        str = strdup("front string"); // str is allocated by the caller
+        vptr_pushb(vec, &str);        // &str is a (char **)
+
+        str = strdup("back string");
+        vptr_pushb(vec, &str);
+
+        // Retrieve "back string".
+        // vptr_back returns a (void *), which makes this assignment possible.
+        char **get = vptr_back(vec);
+
+        // Run free_str on all pointers in vec.
+        // free_str is a wrapper for free().
+        vptr_foreach(vec, free_str);
+        
+        // Now that the memory addressed by each pointer is freed,
+        // we can destroy, then free vec.
+        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+    \endcode
+*/
+static inline voidptr cgcs_vptr_back(cgcs_vptr_t *self) {
+    // m_finish is the address of one-past the last element;
+    // we subtract m_finish by 1 to get the element at the back of vptr_t.
+    return self->m_impl.m_finish - 1;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  index
+
+    \return
+
+    \code
+        vptr_t *vec = vptr_new(capacity);
+        char *str = NULL;
+       
+        str = strdup("front string"); // str is allocated by the caller
+        vptr_pushb(vec, &str);        // &str is a (char **)
+
+        str = strdup("middle string");
+        vptr_pushb(vec, &str);
+
+        str = strdup("back string");
+        vptr_pushb(vec, &str);
+
+        // Retrieve "middle string".
+        // vptr_at returns a (void *), which makes this assignment possible.
+        char **get = vptr_at(vec, 1);
+
+        // Run free_str on all pointers in vec.
+        // free_str is a wrapper for free().
+        vptr_foreach(vec, free_str);
+        
+        // Now that the memory addressed by each pointer is freed,
+        // we can destroy, then free vec.
+        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+    \endcode
+*/
+static inline voidptr cgcs_vptr_at(cgcs_vptr_t *self, const int index) {
+    voidptr *result = self->m_impl.m_start + index;
+    return result >= self->m_impl.m_finish ? NULL : result;
+}
+
+/*!
+    \brief
+ 
+    \param[in]  self
+    \param[in]  index
+ 
+    \return
+ */
+static inline voidptr cgcs_vptr_i(cgcs_vptr_t *self, size_t index) {
+    return self->m_impl.m_start + index;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+*/
+static inline bool cgcs_vptr_empty(cgcs_vptr_t *self) {
+    return self->m_impl.m_start == self->m_impl.m_finish;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+*/
+static inline size_t cgcs_vptr_size(cgcs_vptr_t *self) {
+    return self->m_impl.m_finish - self->m_impl.m_start;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+*/
+static inline size_t cgcs_vptr_capacity(cgcs_vptr_t *self) {
+    return self->m_impl.m_end_of_storage - self->m_impl.m_start;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+*/
+static inline cgcs_vptr_iter_t cgcs_vptr_begin(cgcs_vptr_t *self) {
+    // Same as vptr_front.
+    return self->m_impl.m_start;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+
+    \return
+*/
+static inline cgcs_vptr_iter_t cgcs_vptr_end(cgcs_vptr_t *self) {
+    // Same as vptr_back(self) + 1.
+    return self->m_impl.m_finish;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  func
+    \param[in]  beg
+    \param[in]  end
+*/
+static inline void cgcs_vptr_foreach_range(cgcs_vptr_t *self,
+                                           void *(*func)(void *),
+                                           cgcs_vptr_iter_t beg,
+                                           cgcs_vptr_iter_t end) {
+    while (beg < end) {
+        func(beg++);
+    }
+}
 
 /*!
     \define     vptr_new
     \brief      Macro to allocate and initialize a vptr_t on the heap
  */
-#define cgcs_vptr_new(capacity) vptr_init(malloc(sizeof(vptr_t)), capacity)
+#define cgcs_vptr_new(capacity) cgcs_vptr_init(malloc(sizeof(cgcs_vptr_t)), capacity)
 
 /*!
     \define     vptr_delete
     \brief      Macro to destroy and deallocate a vptr_t from the heap
  */
-#define cgcs_vptr_delete(self) free(vptr_deinit(self))
+#define cgcs_vptr_delete(self) free(cgcs_vptr_deinit(self))
 
 /*!
+    \def    using_namespace_cgcs
+    \brief  Macro to omit 'cgcs_' namespace prefix for all cgcs identifiers
+    \details  Use '#define using_namespace_cgcs' before #include "cgcs_vector_ptr.h"
+ */
+#ifdef using_namespace_cgcs
+# define using_cgcs_vptr
+# endif /* using namespace_cgcs */
+
+/*!
+    \def        using_cgcs_vptr
     \brief      Macro to omit 'cgcs_' namespace prefix, for brevity
-    \details    Use '#define using_cgcs_vptr' before #include "vector_ptr.h"
+    \details    Use '#define using_cgcs_vptr' before #include "cgcs_vector_ptr.h"
 */
 #ifdef using_cgcs_vptr
 

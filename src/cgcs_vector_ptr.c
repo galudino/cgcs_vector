@@ -36,15 +36,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-static inline void
+static void
 cgcs_vector_base_ptr_initialize(struct cgcs_vector_base_ptr *base);
-static inline void
+static void
 cgcs_vector_base_ptr_new_block(struct cgcs_vector_base_ptr *base,
                                size_t capacity);
-static inline void
+static void
 cgcs_vector_base_ptr_resize_block(struct cgcs_vector_base_ptr *base,
                                   size_t size, size_t new_capacity);
-static inline bool
+static bool
 cgcs_vector_base_ptr_full_capacity(struct cgcs_vector_base_ptr *base);
 
 /*!
@@ -84,148 +84,6 @@ vptr_t *vptr_deinit(vptr_t *self) {
     \brief
 
     \param[in]  self
-
-    \return
-
-    \code
-        vptr_t *vec = vptr_new(capacity);
-        char *str = NULL;
-       
-        str = strdup("front string"); // str is allocated by the caller 
-        vptr_pushb(vec, &str);        // &str is a (char **)
-
-        str = strdup("back string");
-        vptr_pushb(vec, &str);
-
-        // Retrieve "front string".
-        // vptr_front returns a (void *), which makes this assignment possible.
-        char **get = vptr_front(vec);
-
-        // Run free_str on all pointers in vec.
-        // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
-        
-        // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
-    \endcode
-*/
-voidptr vptr_front(vptr_t *self) {
-    return self->m_impl.m_start;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-
-    \code
-        vptr_t *vec = vptr_new(capacity);
-        char *str = NULL;
-       
-        str = strdup("front string"); // str is allocated by the caller 
-        vptr_pushb(vec, &str);        // &str is a (char **)
-
-        str = strdup("back string");
-        vptr_pushb(vec, &str);
-
-        // Retrieve "back string".
-        // vptr_back returns a (void *), which makes this assignment possible.
-        char **get = vptr_back(vec);
-
-        // Run free_str on all pointers in vec.
-        // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
-        
-        // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
-    \endcode
-*/
-voidptr vptr_back(vptr_t *self) {
-    // m_finish is the address of one-past the last element;
-    // we subtract m_finish by 1 to get the element at the back of vptr_t.
-    return self->m_impl.m_finish - 1;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-    \param[in]  index
-
-    \return
-
-    \code
-        vptr_t *vec = vptr_new(capacity);
-        char *str = NULL;
-       
-        str = strdup("front string"); // str is allocated by the caller 
-        vptr_pushb(vec, &str);        // &str is a (char **)
-
-        str = strdup("middle string");
-        vptr_pushb(vec, &str);
-
-        str = strdup("back string");
-        vptr_pushb(vec, &str);
-
-        // Retrieve "middle string".
-        // vptr_at returns a (void *), which makes this assignment possible.
-        char **get = vptr_at(vec, 1);
-
-        // Run free_str on all pointers in vec.
-        // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
-        
-        // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
-    \endcode
-*/
-voidptr vptr_at(vptr_t *self, const int index) {
-    voidptr *result = self->m_impl.m_start + index;
-    return result >= self->m_impl.m_finish ? NULL : result;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-*/
-bool vptr_empty(vptr_t *self) {
-    return self->m_impl.m_start == self->m_impl.m_finish;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-*/
-size_t vptr_size(vptr_t *self) {
-    return self->m_impl.m_finish - self->m_impl.m_start;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-*/
-size_t vptr_capacity(vptr_t *self) {
-    return self->m_impl.m_end_of_storage - self->m_impl.m_start;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
     \param[in]  n
 
     \return
@@ -251,30 +109,6 @@ bool vptr_shrink_to_fit(vptr_t *self) {
     const size_t size = vptr_size(self);
 
     return (capacity > size) ? vptr_resize(self, size) : false;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-*/
-vptr_iter_t vptr_begin(vptr_t *self) {
-    // Same as vptr_front.
-    return self->m_impl.m_start;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-
-    \return
-*/
-vptr_iter_t vptr_end(vptr_t *self) {
-    // Same as vptr_back(self) + 1.
-    return self->m_impl.m_finish;
 }
 
 /*!
@@ -439,6 +273,7 @@ void vptr_pushf(vptr_t *self, const void *valaddr) {
             sizeof *self->m_impl.m_start * vptr_size(self));
 
     *(self->m_impl.m_start) = *(void **)(valaddr);
+    ++self->m_impl.m_finish;
 }
 
 /*!
@@ -482,21 +317,6 @@ void vptr_foreach(vptr_t *self, void *(*func)(void *)) {
 
     while (it < end) {
         func(it++);
-    }
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-    \param[in]  func
-    \param[in]  beg
-    \param[in]  end
-*/
-void vptr_foreach_range(vptr_t *self, void *(*func)(void *), vptr_iter_t beg,
-                        vptr_iter_t end) {
-    while (beg < end) {
-        func(beg++);
     }
 }
 
@@ -594,6 +414,7 @@ vptr_iter_t vptr_find_range(vptr_t *self,
     return (beg == end) ? NULL : beg;
 }
 
+
 /*!
     \brief
 
@@ -601,7 +422,9 @@ vptr_iter_t vptr_find_range(vptr_t *self,
     \param[in]  cmpfn
 */
 void vptr_qsort(vptr_t *self, int (*cmpfn)(const void *, const void *)) {
-    qsort(self->m_impl.m_start, vptr_size(self), sizeof *self->m_impl.m_start,
+    qsort(self->m_impl.m_start,
+          vptr_size(self),
+          sizeof *self->m_impl.m_start,
           cmpfn);
 }
 
@@ -614,9 +437,12 @@ void vptr_qsort(vptr_t *self, int (*cmpfn)(const void *, const void *)) {
 */
 void vptr_qsort_position(vptr_t *self, int (*cmpfn)(const void *, const void *),
                          vptr_iter_t pos) {
-    qsort(pos, self->m_impl.m_finish - pos, sizeof *self->m_impl.m_start,
+    qsort(pos,
+          self->m_impl.m_finish - pos,
+          sizeof *self->m_impl.m_start,
           cmpfn);
 }
+
 
 /*!
     \brief
