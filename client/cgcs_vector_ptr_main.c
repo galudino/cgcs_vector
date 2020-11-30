@@ -41,19 +41,19 @@
     as they are trivial to write -- but they are provided here
     to help demonstrate how vptr_t is used.
 */
-int cmp_cstr(const void *c0, const void *c1);
-int cmp_int(const void *c0, const void *c1);
-int cmp_double(const void *c0, const void *c1);
+static int cmp_cstr(const void *c0, const void *c1);
+static int cmp_int(const void *c0, const void *c1);
+static int cmp_double(const void *c0, const void *c1);
 
 /*
     There are many things you can do with the foreach function,
     but the one you may use most commonly with foreach is
     freeing the memory for each pointer.
 */
-void *print_cstr(void *arg);
-void *print_int(void *arg);
-void *print_double(void *arg);
-void *free_cstr(void *arg);
+static void print_cstr(void *arg);
+static void print_int(void *arg);
+static void print_double(void *arg);
+static void free_cstr(void *arg);
 
 int main(int argc, const char *argv[]) {
     // Creating a vptr_t on the heap.
@@ -130,57 +130,32 @@ int main(int argc, const char *argv[]) {
     return 0;
 }
 
-int cmp_cstr(const void *c0, const void *c1) {
-    char *a = *(char **)(c0);
-    char *b = *(char **)(c1);
-
-    return strcmp(a, b);
+static inline int cmp_cstr(const void *c0, const void *c1) {
+    return strcmp(*(char **)(c0), *(char **)(c1));
 }
 
-int cmp_int(const void *c0, const void *c1) {
-    int a = *(int *)(c0);
-    int b = *(int *)(c1);
-
-    return a - b;
+static inline int cmp_int(const void *c0, const void *c1) {
+    return *(int *)(c0) - *(int *)(c1);
 }
 
-int cmp_double(const void *c0, const void *c1) {
-    double a = *(double *)(c0);
-    double b = *(double *)(c1);
-
-    double delta = fabs(a - b);
-
-    if (delta < 0.0001) {
-        return 0;
-    } else {
-        return (int)(delta);
-    }
+static inline int cmp_double(const void *c0, const void *c1) {
+    double delta = 0.0;
+    return (delta = fabs(*(double *)(c0) - *(double *)(c1)))
+    < 0.0001 ? 0 : delta;
 }
 
-void *print_cstr(void *arg) {
-    char *cstr = *(char **)(arg);
-    printf("%s\n", cstr);
-
-    return NULL;
+static inline void print_cstr(void *arg) {
+    printf("%s\n", *(char **)(arg));
 }
 
-void *print_int(void *arg) {
-    int i = *(int *)(arg);
-    printf("%d\n", i);
-
-    return NULL;
+static inline void print_int(void *arg) {
+    printf("%d\n", *(int *)(arg));
 }
 
-void *print_double(void *arg) {
-    double d = *(double *)(arg);
-    printf("%f\n", d);
-
-    return NULL;
+static inline void print_double(void *arg) {
+    printf("%f\n", *(double *)(arg));
 }
 
-void *free_cstr(void *arg) {
-    char **cstr = (char **)(arg);
-    free(*cstr);
-
-    return NULL;
+static inline void free_cstr(void *arg) {
+    free(*(char **)(arg));
 }
