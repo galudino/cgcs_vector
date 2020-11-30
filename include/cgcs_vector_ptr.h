@@ -71,8 +71,8 @@ struct cgcs_vector_ptr {
     } m_impl;
 };
 
-cgcs_vptr_t *cgcs_vptr_init(cgcs_vptr_t *self, size_t capacity);
-cgcs_vptr_t *cgcs_vptr_deinit(cgcs_vptr_t *self);
+void cgcs_vptr_init(cgcs_vptr_t *self, size_t capacity);
+void cgcs_vptr_deinit(cgcs_vptr_t *self);
 
 static voidptr cgcs_vptr_front(cgcs_vptr_t *self);
 static voidptr cgcs_vptr_back(cgcs_vptr_t *self);
@@ -109,9 +109,9 @@ void cgcs_vptr_popf(cgcs_vptr_t *self);
 
 void cgcs_vptr_clear(cgcs_vptr_t *self);
 
-void cgcs_vptr_foreach(cgcs_vptr_t *self, void *(*func)(void *));
+void cgcs_vptr_foreach(cgcs_vptr_t *self, void (*func)(void *));
 
-static void cgcs_vptr_foreach_range(cgcs_vptr_t *self, void *(*func)(void *),
+static void cgcs_vptr_foreach_range(cgcs_vptr_t *self, void (*func)(void *),
                              cgcs_vptr_iter_t beg, cgcs_vptr_iter_t end);
 
 int cgcs_vptr_search(cgcs_vptr_t *self,
@@ -139,6 +139,9 @@ void cgcs_vptr_qsort_position(cgcs_vptr_t *self,
                                      int (*cmpfn)(const void *, const void *),
                                      cgcs_vptr_iter_t pos);
 
+static cgcs_vptr_t *cgcs_vptr_new(size_t capacity);
+static void cgcs_vptr_delete(cgcs_vptr_t *self);
+
 /*!
     \brief
 
@@ -147,26 +150,28 @@ void cgcs_vptr_qsort_position(cgcs_vptr_t *self,
     \return
 
     \code
-        vptr_t *vec = vptr_new(capacity);
+        vptr_t vec = CGCS_VECTOR_PTR_INITIALIZER;
+        cgcs_vptr_init(&vec, capacity);
+ 
         char *str = NULL;
        
         str = strdup("front string"); // str is allocated by the caller
-        vptr_pushb(vec, &str);        // &str is a (char **)
+        cgcs_vptr_pushb(&vec, &str);        // &str is a (char **)
 
         str = strdup("back string");
-        vptr_pushb(vec, &str);
+        cgcs_vptr_vpushb(&vec, &str);
 
         // Retrieve "front string".
-        // vptr_front returns a (void *), which makes this assignment possible.
-        char **get = vptr_front(vec);
+        // cgcs_vptr_front returns a (void *), which makes this assignment possible.
+        char **get = cgcs_vptr_front(&vec);
 
         // Run free_str on all pointers in vec.
-        // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
+        // free_str is a wrapper for free(), that deals with (char *).
+        cgcs_vptr_foreach(&vec, free_str);
         
         // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+        // we can deinitialize vec.
+        cgcs_vptr_deinit(&vec);
     \endcode
 */
 static inline voidptr cgcs_vptr_front(cgcs_vptr_t *self) {
@@ -181,26 +186,28 @@ static inline voidptr cgcs_vptr_front(cgcs_vptr_t *self) {
     \return
 
     \code
-        vptr_t *vec = vptr_new(capacity);
-        char *str = NULL;
-       
-        str = strdup("front string"); // str is allocated by the caller
-        vptr_pushb(vec, &str);        // &str is a (char **)
+     vptr_t vec = CGCS_VECTOR_PTR_INITIALIZER;
+     cgcs_vptr_init(&vec, capacity);
 
-        str = strdup("back string");
-        vptr_pushb(vec, &str);
+     char *str = NULL;
 
-        // Retrieve "back string".
-        // vptr_back returns a (void *), which makes this assignment possible.
-        char **get = vptr_back(vec);
+     str = strdup("front string"); // str is allocated by the caller
+     cgcs_vptr_pushb(&vec, &str);        // &str is a (char **)
 
-        // Run free_str on all pointers in vec.
-        // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
-        
-        // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+     str = strdup("back string");
+     cgcs_vptr_vpushb(&vec, &str);
+
+     // Retrieve "back string".
+     // cgcs_vptr_back returns a (void *), which makes this assignment possible.
+     char **get = cgcs_vptr_back(&vec);
+
+     // Run free_str on all pointers in vec.
+     // free_str is a wrapper for free(), that deals with (char *).
+     cgcs_vptr_foreach(&vec, free_str);
+     
+     // Now that the memory addressed by each pointer is freed,
+     // we can deinitialize vec.
+     cgcs_vptr_deinit(&vec);
     \endcode
 */
 static inline voidptr cgcs_vptr_back(cgcs_vptr_t *self) {
@@ -218,29 +225,31 @@ static inline voidptr cgcs_vptr_back(cgcs_vptr_t *self) {
     \return
 
     \code
-        vptr_t *vec = vptr_new(capacity);
+        vptr_t vec = CGCS_VECTOR_PTR_INITIALIZER;
+        cgcs_vptr_init(&vec, capacity);
+
         char *str = NULL;
-       
+
         str = strdup("front string"); // str is allocated by the caller
-        vptr_pushb(vec, &str);        // &str is a (char **)
+        cgcs_vptr_pushb(&vec, &str);        // &str is a (char **)
 
         str = strdup("middle string");
-        vptr_pushb(vec, &str);
+        cgcs_vptr_pushb(&vec, &str);
 
         str = strdup("back string");
-        vptr_pushb(vec, &str);
+        cgcs_vptr_pushb(&vec, &str);
 
         // Retrieve "middle string".
-        // vptr_at returns a (void *), which makes this assignment possible.
-        char **get = vptr_at(vec, 1);
+        // cgcs_vptr_at returns a (void *), which makes this assignment possible.
+        char **get = cgcs_vptr_at(&vec, 1);
 
         // Run free_str on all pointers in vec.
         // free_str is a wrapper for free().
-        vptr_foreach(vec, free_str);
-        
+        cgcs_vptr_foreach(&vec, free_str);
+            
         // Now that the memory addressed by each pointer is freed,
-        // we can destroy, then free vec.
-        vptr_delete(vec);   // Equivalent to free(vptr_deinit(vec))
+        // we can deinitialize vec.
+        cgcs_vptr_deinit(&vec);
     \endcode
 */
 static inline voidptr cgcs_vptr_at(cgcs_vptr_t *self, const int index) {
@@ -326,7 +335,7 @@ static inline cgcs_vptr_iter_t cgcs_vptr_end(cgcs_vptr_t *self) {
     \param[in]  end
 */
 static inline void cgcs_vptr_foreach_range(cgcs_vptr_t *self,
-                                           void *(*func)(void *),
+                                           void (*func)(void *),
                                            cgcs_vptr_iter_t beg,
                                            cgcs_vptr_iter_t end) {
     while (beg < end) {
@@ -335,16 +344,31 @@ static inline void cgcs_vptr_foreach_range(cgcs_vptr_t *self,
 }
 
 /*!
-    \define     vptr_new
-    \brief      Macro to allocate and initialize a vptr_t on the heap
+    \brief
+ 
+    \param[in]  capacity
+ 
+    \return
  */
-#define cgcs_vptr_new(capacity) cgcs_vptr_init(malloc(sizeof(cgcs_vptr_t)), capacity)
+static inline cgcs_vptr_t *cgcs_vptr_new(size_t capacity) {
+    cgcs_vptr_t *v = NULL;
+    
+    if ((v = malloc(sizeof *v))) {
+        cgcs_vptr_init(v, capacity);
+    }
+    
+    return v;
+}
 
 /*!
-    \define     vptr_delete
-    \brief      Macro to destroy and deallocate a vptr_t from the heap
+    \brief
+ 
+    \param[in]  self
  */
-#define cgcs_vptr_delete(self) free(cgcs_vptr_deinit(self))
+static inline void cgcs_vptr_delete(cgcs_vptr_t *self) {
+    cgcs_vptr_deinit(self);
+    free(self);
+}
 
 /*!
     \def    using_namespace_cgcs
@@ -365,46 +389,47 @@ static inline void cgcs_vptr_foreach_range(cgcs_vptr_t *self,
 typedef cgcs_vptr_t vptr_t;
 typedef cgcs_vptr_iter_t vptr_iter_t;
 
-#define vptr_init cgcs_vptr_init
-#define vptr_deinit cgcs_vptr_deinit
+#define vptr_init(self, capacity)               cgcs_vptr_init(self, capacity)
+#define vptr_deinit(self)                       cgcs_vptr_deinit(self)
 
-#define vptr_front cgcs_vptr_front
-#define vptr_back cgcs_vptr_back
-#define vptr_at cgcs_vptr_at
-#define vptr_i cgcs_vptr_i
+#define vptr_front(self)                        cgcs_vptr_front(self)
+#define vptr_back(self)                         cgcs_vptr_back(self)
+#define vptr_at(self, index)                    cgcs_vptr_at(self, index)
+#define vptr_i(self, index)                     cgcs_vptr_i(self, index)
 
-#define vptr_empty cgcs_vptr_empty
-#define vptr_size cgcs_vptr_size
-#define vptr_capacity cgcs_vptr_capacity
-#define vptr_resize cgcs_vptr_resize
+#define vptr_empty(self)                        cgcs_vptr_empty(self)
+#define vptr_size(self)                         cgcs_vptr_size(self)
+#define vptr_capacity(self)                     cgcs_vptr_capacity(self)
+#define vptr_resize(self, n)                    cgcs_vptr_resize(self, n)
+#define vptr_shrink_to_fit(self)                cgcs_vptr_shrink_to_fit(self)
 
-#define vptr_begin cgcs_vptr_begin
-#define vptr_end cgcs_vptr_end
+#define vptr_begin(self)                        cgcs_vptr_begin(self)
+#define vptr_end(self)                          cgcs_vptr_end(self)
 
-#define vptr_insert cgcs_vptr_insert
-#define vptr_insert_range cgcs_vptr_insert_range
-#define vptr_erase cgcs_vptr_erase
-#define vptr_erase_range cgcs_vptr_erase_range
+#define vptr_insert(self, it, addr)             cgcs_vptr_insert(self, it, addr)
+#define vptr_insert_range(s, i, b, e)         cgcs_vptr_insert_range(s, i, b, e)
+#define vptr_erase(self, it)                    cgcs_vptr_erase(self, it)
+#define vptr_erase_range(s, b, e)               cgcs_vptr_erase_range(s, b, e)
 
-#define vptr_pushb cgcs_vptr_pushb
-#define vptr_popb cgcs_vptr_popb
-#define vptr_pushf cgcs_vptr_pushf
-#define vptr_popf cgcs_vptr_popf
-#define vptr_clear cgcs_vptr_clear
+#define vptr_pushb(self, addr)                  cgcs_vptr_pushb(self, addr)
+#define vptr_popb(self)                         cgcs_vptr_popb(self)
+#define vptr_pushf(self, addr)                  cgcs_vptr_pushf(self, addr)
+#define vptr_popf(self)                         cgcs_vptr_popf(self)
+#define vptr_clear(self)                        cgcs_vptr_clear(self)
 
-#define vptr_foreach cgcs_vptr_foreach
-#define vptr_foreach_range cgcs_vptr_foreach_range
+#define vptr_foreach(self, func)                cgcs_vptr_foreach(self, func)
+#define vptr_foreach_range(s, f, b, e)       cgcs_vptr_foreach_range(s, f, b, e)
 
-#define vptr_search cgcs_vptr_search
-#define vptr_search_range cgcs_vptr_search_range
-#define vptr_find cgcs_vptr_find
-#define vptr_find_range cgcs_vptr_find_range
+#define vptr_search(s, c, a)                    cgcs_vptr_search(s, c, a)
+#define vptr_search_range(s, c, a, b, e)   cgcs_vptr_search_range(s, c, a, b, e)
+#define vptr_find(self, cmpfn, addr)            cgcs_find(self, cmpfn, addr)
+#define vptr_find_range(s, c, a, b, e)       cgcs_vptr_find_range(s, c, a, b, e)
 
-#define vptr_qsort cgcs_vptr_qsort
-#define vptr_qsort_position cgcs_vptr_qsort_position
+#define vptr_qsort(self, cmpfn)                 cgcs_vptr_qsort(self, cmpfn)
+#define vptr_qsort_position(s, c, p)           cgcs_vptr_qsort_position(s, c, p)
 
-#define vptr_new cgcs_vptr_new
-#define vptr_delete cgcs_vptr_delete
+#define vptr_new(capacity)                      cgcs_vptr_new(capacity)
+#define vptr_delete(self)                       cgcs_vptr_delete(self)
 
 #endif /* using_cgcs_vptr */
 
@@ -412,46 +437,47 @@ typedef cgcs_vptr_iter_t vptr_iter_t;
 
 typedef vptr_iter_t viter_t;
 
-#define vinit vptr_init
-#define vdeinit vptr_deinit
+#define vinit(self, capacity)                     vptr_init(self, capacity)
+#define vdeinit(self)                             vptr_deinit(self)
 
-#define vfront vptr_front
-#define vback vptr_back
-#define vat vptr_at
+#define vfront(self)                              vptr_front(self)
+#define vback(self)                               vptr_back(self)
+#define vat(self, index)                          vptr_at(self, index)
 
-#define vi vptr_i
+#define vi(self, index)                           vptr_i(self, index)
 
-#define vempty vptr_empty
-#define vsize vptr_size
-#define vcapacity vptr_capacity
-#define vresize vptr_resize
+#define vempty(self)                              vptr_empty(self)
+#define vsize(self)                               vptr_size(self)
+#define vcapacity(self)                           vptr_capacity(self)
+#define vresize(self, n)                          vptr_resize(self, n)
 
-#define vbegin vptr_begin
-#define vend vptr_end
+#define vbegin(self)                              vptr_begin(self)
+#define vend(self)                                vptr_end(self)
 
-#define vinsert vptr_insert
-#define vinsert_range vptr_insert_range
-#define verase vptr_erase
-#define verase_range vptr_erase_range
+#define vinsert(self, it, addr)                   vptr_insert(self, it, addr)
+#define vinsert_range(s, i, b, e)                 vptr_insert_range(s, i, b, e)
+#define verase(self, it)                          vptr_erase(self, it)
+#define verase_range(s, b, e)                     vptr_erase_range(s, b, e)
 
-#define vpushb vptr_pushb
-#define vpopb vptr_popb
-#define vpushf vptr_pushf
-#define vpopf vptr_popf
-#define vclear vptr_clear
+#define vpushb(self, addr)                        vptr_pushb(self, addr)
+#define vpopb(self)                               vptr_popb(self)
+#define vpushf(self, addr)                        vptr_pushf(self, addr)
+#define vpopf(self)                               vptr_popf(self)
+#define vclear(self)                              vptr_clear(self)
 
-#define vforeach vptr_foreach
-#define vforeach_range vptr_foreach_range
+#define vforeach(self, func)                      vptr_foreach(self, func)
+#define vforeach_range(self, cmpfn, addr)  vptr_foreach_range(self, cmpfn, addr)
 
-#define vsearch vptr_search
-#define vsearch_range vptr_search_range
-#define vfind vptr_find
-#define vfind_range vptr_find_range
+#define vsearch(self, cmpfn, addr)                vptr_search(self, cmpfn, addr)
+#define vsearch_range(s, c, a, b, e)            vptr_search_range(s, c, a, b, e)
+#define vfind(self, cmpfn, addr)                  vptr_find(self, cmpfn, addr)
+#define vfind_range(s, c, a, b, e)                vptr_find_range(s, c, a, b, e)
 
-#define vqsort_position vptr_qsort_position
+#define vqsort(self, cmpfn)                       vptr_qsort(self, cmpfn)
+#define vqsort_position(self, cmpfn, pos)  vptr_qsort_position(self, cmpfn, pos)
 
-#define vnew vptr_new
-#define vdelete vptr_delete
+#define vnew(capacity)                            vptr_new(capacity)
+#define vdelete(self)                             vptr_delete(self)
 
 #endif /* CGCS_VECTOR_PTR__SHORT_FUNCNAMES */
 

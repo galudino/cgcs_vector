@@ -52,13 +52,10 @@ cgcs_vector_base_ptr_full_capacity(struct cgcs_vector_base_ptr *base);
 
     \param[in]     self
     \param[in]     capacity
-
-    \return
 */
-vptr_t *vptr_init(vptr_t *self, size_t capacity) {
+void vptr_init(vptr_t *self, size_t capacity) {
     cgcs_vector_base_ptr_initialize(&(self->m_impl));
     cgcs_vector_base_ptr_new_block(&(self->m_impl), capacity);
-    return self;
 }
 
 /*!
@@ -68,7 +65,7 @@ vptr_t *vptr_init(vptr_t *self, size_t capacity) {
 
     \return
 */
-vptr_t *vptr_deinit(vptr_t *self) {
+void vptr_deinit(vptr_t *self) {
     // Pointees are not managed by deinit.
     //
     // If you want to free the memory addressed by each pointer
@@ -77,7 +74,6 @@ vptr_t *vptr_deinit(vptr_t *self) {
     // and free each pointer as needed.
     free(self->m_impl.m_start);
     cgcs_vector_base_ptr_initialize(&(self->m_impl));
-    return self;
 }
 
 /*!
@@ -311,7 +307,7 @@ void vptr_clear(vptr_t *self) {
     \param[in]  self
     \param[in]  func
 */
-void vptr_foreach(vptr_t *self, void *(*func)(void *)) {
+void vptr_foreach(vptr_t *self, void (*func)(void *)) {
     vptr_iter_t it = vptr_begin(self);
     vptr_iter_t end = vptr_end(self);
 
