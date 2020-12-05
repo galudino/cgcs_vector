@@ -7,9 +7,26 @@ This document, and this repo -- is a work in progress.
 
 ## Building:
 
-Included is a <code>CMakeLists.txt</code> file, for use with <b>CMake</b>.<br>
-For now, I have only tested this code on <b>macOS 10.15.6 Catalina.</b>
+The minimum version of C required is `C99`.
 
+Repository is currently being overhauled.
+A `CMakeLists.txt` file will be provided once maintenance is complete.
+
+For now, you may build the test client and `cgcs_vector_ptr` source code 
+with this `Terminal` command:
+
+```c
+cc -std=c99 -pedantic-errors -Wall -Werr -o main cgcs_vector_ptr_test.c cgcs_vector_ptr.c
+```
+
+If you want just the `cgcs_vector_ptr` library, (the `.o` file), you may use this `Terminal` command:
+
+```c
+cc -std=c99 -pedantic-errors -Wall -Werror -c cgcs_vector_ptr.c -o cgcs_vector_ptr.o
+```
+
+If using an IDE, simply bring over `cgcs_vector_ptr.h` and `cgcs_vector_ptr.c`
+into your project's IDE.
 
 ## Foreword on <code><b>struct</b> cgcs_vector_ptr</code>, aka <code>cgcs_vptr_t</code>
 
@@ -176,7 +193,7 @@ before
 #include "cgcs_vector_ptr.h"
 ```
 
-...we get this:
+...we can write code like this:
 
 ```
 #define using_cgcs_vptr
@@ -217,3 +234,62 @@ int main(int argc, const char *argv[]) {
 ```
 
 What results is the omission of '<code>cgcs_</code>' from this library's types and functions.
+
+
+### Making the names even shorter
+
+By using
+
+```
+#define CGCS_VECTOR_PTR_SHORTNAMES
+```
+
+before
+
+```
+#define using_cgcs_vptr
+#include "cgcs_vector_ptr.h"
+```
+
+...we can write code like this:
+
+```
+#define CGCS_VECTOR_PTR_SHORTNAMES
+#define using_cgcs_vptr
+#include "cgcs_vector_ptr.h"
+
+#include <stdio.h>
+#include <string.h>
+
+int main(int argc, const char *argv[]) {
+    size_t capacity = 2;
+    vptr_t vec;
+    vinit(&vec, capacity);
+
+    char *str = NULL;
+
+    str = strdup("beta");
+    vpushb(&vec, &str);
+
+    str = strdup("charlie");
+    vpushb(&vec, &str);
+
+    str = strdup("alpha");
+    vpushb(&vec, &str);
+
+    viter_t it = vbegin(&vec);
+    viter_t end = vend(&vec);
+    char **curr = NULL;
+
+    while (it < end) {
+        curr = (char **)(it);
+        printf("iterator: %s\n", *curr);
+        free(*curr);
+    }
+
+    vdeinit(&vec);
+    return 0;
+}
+```
+
+Note that shortening the function/type names is optional.
