@@ -1,4 +1,4 @@
-# cgcs_vector_ptr
+# cgcs_vector
 
 A data structure for the C language; a buffer (vector) of pointers.
 
@@ -12,29 +12,29 @@ The minimum version of C required is `C99`.
 Repository is currently being overhauled.
 A `CMakeLists.txt` file will be provided once maintenance is complete.
 
-For now, you may build the test client and `cgcs_vector_ptr` source code 
+For now, you may build the test client and `cgcs_vector` source code 
 with this `Terminal` command:
 
 ```c
-cc -std=c99 -pedantic-errors -Wall -Werr -o main cgcs_vector_ptr_test.c cgcs_vector_ptr.c
+cc -std=c99 -pedantic-errors -Wall -Werr -o main cgcs_vector_test.c cgcs_vector.c
 ```
 
-If you want just the `cgcs_vector_ptr` library, (the `.o` file), you may use this `Terminal` command:
+If you want just the `cgcs_vector` library, (the `.o` file), you may use this `Terminal` command:
 
 ```c
-cc -std=c99 -pedantic-errors -Wall -Werror -c cgcs_vector_ptr.c -o cgcs_vector_ptr.o
+cc -std=c99 -pedantic-errors -Wall -Werror -c cgcs_vector.c -o cgcs_vector.o
 ```
 
-If using an IDE, simply bring over `cgcs_vector_ptr.h` and `cgcs_vector_ptr.c`
+If using an IDE, simply bring over `cgcs_vector.h` and `cgcs_vector.c`
 into your project's IDE.
 
-## Foreword on <code><b>struct</b> cgcs_vector_ptr</code>, aka <code>cgcs_vptr_t</code>
+## Foreword on <code><b>struct</b> cgcs_vector</code>, aka <code>cgcs_vector</code>
 
 The C language leaves it up to the user to create their own data structures.<br>
 Whenever I would write C++, I would always be grateful for <code>std::vector</code>,<br>
 as it is a very useful data structure to have, it's versatile, and it's fast.
 
-My goal with <code>cgcs_vector_ptr</code> is to have a data structure<br>
+My goal with <code>cgcs_vector</code> is to have a data structure<br>
 that can be just as useful, when you must program in C.
 
 I have been down this rabbit hole before, with one of my previous repositories,<br>
@@ -51,7 +51,7 @@ or to create too many abstractions.
 In the <code>gcslib</code> repository, there is a subdirectory, <code>test__vptr</code> --<br>
 and this new repo is pretty much picking up where I left off with <code>test__vptr</code>.
 
-<code><b>struct</b> cgcs_vector_ptr</code>'s alias, or <code><b>typedef</b></code> is <code>cgcs_vptr_t</code>.
+<code><b>struct</b> cgcs_vector</code>'s alias, or <code><b>typedef</b></code> is <code>cgcs_vector</code>.
 
 ## How is it implemented
 
@@ -59,17 +59,17 @@ Often times while writing in C, large objects (instances of <code>struct</code>)
 or strings (represented as <code>char *</code>) have to be dynamically allocated.<br>
 We do not have constructors/destructors, references, or RAII in C.
 
-I have decided to implement <code>cgcs_vptr_t</code> as follows<br>
+I have decided to implement <code>cgcs_vector</code> as follows<br>
 (The memory layout is inspired from the GCC implementation of <code>std::vector</code>)
 
 ```
-typedef struct cgcs_vector_ptr cgcs_vptr_t;
+typedef struct cgcs_vector cgcs_vector;
 typedef void *voidptr;                      
-typedef voidptr *cgcs_vptr_iter_t;
+typedef voidptr *cgcs_vector_iterator;
 
 // The "vector" structure
-struct cgcs_vector_ptr {
-    struct cgcs_vector_base_ptr {
+struct cgcs_vector {
+    struct cgcs_vector_base {
         voidptr *m_start;
         voidptr *m_finish;
         voidptr *m_end_of_storage;
@@ -79,13 +79,13 @@ struct cgcs_vector_ptr {
 <b>We are ultimately dealing with a buffer of pointers.<br>
 Each block is <code>sizeof(void *)</code> bytes large.</b>
 
-- ### <code><b>typedef struct</b> cgcs_vector_ptr cgcs_vptr_t </code>
+- ### <code><b>typedef struct</b> cgcs_vector cgcs_vector </code>
 
-    We alias <code><b>struct</b> cgcs_vector_ptr</code> with <code>cgcs_vptr_t</code>.
+    We alias <code><b>struct</b> cgcs_vector</code> with <code>cgcs_vector</code>.
 
 - ### <code><b>typedef void *</b> voidptr</code>
 
-    <code>m_start</code> in <code><b>struct</b> cgcs_vector_base_ptr</code><br>
+    <code>m_start</code> in <code><b>struct</b> cgcs_vector_base</code><br>
     is a pointer that addresses a <b>buffer of pointers</b>.<br>
     By aliasing <code><b>void *</b></code>, I believe this idea is made clearer.
 
@@ -96,7 +96,7 @@ Each block is <code>sizeof(void *)</code> bytes large.</b>
     If <code>m_finish</code> and <code>m_end_of_storage</code> are the same address,<br>
     the buffer will be full after using the space at <code>m_finish</code>.
 
-- ### <code><b>typedef</b> voidptr *cgcs_vptr_iter_t</code>
+- ### <code><b>typedef</b> voidptr *cgcs_vector_iterator</code>
 
     Since we can do pointer arithmetic on a <code>voidptr *</code>, or <code>void **</code>,<br>
     we will alias it so that the user knows that it can be used as an iterator.
@@ -111,37 +111,37 @@ I have been using '<code>gcs</code>' to prefix/namespace much of my work.<br>
 Since I have been using '<code>gcs</code>' in my C++ libraries as well,<br>
 I am using '<code>cgcs</code>' to denote that this is a C library.
 
-<code>cgcs::vptr_t</code> is 'approximated' using
+<code>cgcs::vector</code> is 'approximated' using
 ```
-cgcs_vptr_t
+cgcs_vector
 ```
 
-Here is what a small program would look like using <code>cgcs_vptr_t</code>:
+Here is what a small program would look like using <code>cgcs_vector</code>:
 
 ```
-#include "cgcs_vector_ptr.h"
+#include "cgcs_vector.h"
 
 #include <stdio.h>
 #include <string.h>
 
 int main(int argc, const char *argv[]) {
     size_t capacity = 2;
-    cgcs_vptr_t vec;
-    cgcs_vptr_init(&vec, capacity);
+    cgcs_vector_t vec;
+    cgcs_vinit(&vec, capacity);
 
     char *str = NULL;
 
     str = strdup("beta");
-    cgcs_vptr_pushb(&vec, &str);
+    cgcs_vpushb(&vec, &str);
 
     str = strdup("charlie");
-    cgcs_vptr_pushb(&vec, &str);
+    cgcs_vpushb(&vec, &str);
 
     str = strdup("alpha");
-    cgcs_vptr_pushb(&vec, &str);
+    cgcs_vpushb(&vec, &str);
 
-    cgcs_vptr_iter_t it = cgcs_vptr_begin(&vec);
-    cgcs_vptr_iter_t end = cgcs_vptr_end(&vec);
+    cgcs_vector_iterator it = cgcs_vbegin(&vec);
+    cgcs_vector_iterator end = cgcs_vend(&vec);
     char **curr = NULL;
 
     while (it < end) {
@@ -150,13 +150,13 @@ int main(int argc, const char *argv[]) {
         free(*curr);
     }
 
-    cgcs_vptr_deinit(&vec);
+    cgcs_vdeinit(&vec);
     return 0;
 }
 ```
 
 We define a capacity of 2,<br>
-then we create an instance of <code>cgcs_vptr_t</code>, <code>vec</code>, on the stack.<br>
+then we create an instance of <code>cgcs_vector</code>, <code>vec</code>, on the stack.<br>
 
 We then call the <code>init</code> function on <code>&vec</code>.<br>
 This will allocate memory for vec's internal buffer.
@@ -181,89 +181,30 @@ which will free <code>vec</code>'s internal buffer.
 
 ### Approximating the <code>using</code> statement from C++
 
-By using
+By using the directive
 
 ```
-#define using_cgcs_vptr
+#define USE_CGCS_VECTOR
 ```
 
 before
 
 ```
-#include "cgcs_vector_ptr.h"
+#include "cgcs_vector.h"
 ```
 
 ...we can write code like this:
 
 ```
-#define using_cgcs_vptr
-#include "cgcs_vector_ptr.h"
+#define USE_CGCS_VECTOR
+#include "cgcs_vector.h"
 
 #include <stdio.h>
 #include <string.h>
 
 int main(int argc, const char *argv[]) {
     size_t capacity = 2;
-    vptr_t vec;
-    vptr_init(&vec, capacity);
-
-    char *str = NULL;
-
-    str = strdup("beta");
-    vptr_pushb(&vec, &str);
-
-    str = strdup("charlie");
-    vptr_pushb(&vec, &str);
-
-    str = strdup("alpha");
-    vptr_pushb(&vec, &str);
-
-    vptr_iter_t it = vptr_begin(&vec);
-    vptr_iter_t end = vptr_end(&vec);
-    char **curr = NULL;
-
-    while (it < end) {
-        curr = (char **)(it);
-        printf("iterator: %s\n", *curr);
-        free(*curr);
-    }
-
-    vptr_deinit(&vec);
-    return 0;
-}
-```
-
-What results is the omission of '<code>cgcs_</code>' from this library's types and functions.
-
-
-### Making the names even shorter
-
-By using
-
-```
-#define CGCS_VECTOR_PTR_SHORTNAMES
-```
-
-before
-
-```
-#define using_cgcs_vptr
-#include "cgcs_vector_ptr.h"
-```
-
-...we can write code like this:
-
-```
-#define CGCS_VECTOR_PTR_SHORTNAMES
-#define using_cgcs_vptr
-#include "cgcs_vector_ptr.h"
-
-#include <stdio.h>
-#include <string.h>
-
-int main(int argc, const char *argv[]) {
-    size_t capacity = 2;
-    vptr_t vec;
+    vector_t vec;
     vinit(&vec, capacity);
 
     char *str = NULL;
@@ -277,12 +218,12 @@ int main(int argc, const char *argv[]) {
     str = strdup("alpha");
     vpushb(&vec, &str);
 
-    viter_t it = vbegin(&vec);
-    viter_t end = vend(&vec);
+    vector_iterator it = vbegin(&vec);
+    vector_iterator end = vend(&vec);
     char **curr = NULL;
 
     while (it < end) {
-        curr = (char **)(it);
+        curr = (char **)(it++);
         printf("iterator: %s\n", *curr);
         free(*curr);
     }
@@ -292,4 +233,4 @@ int main(int argc, const char *argv[]) {
 }
 ```
 
-Note that shortening the function/type names is optional.
+What results is the omission of '<code>cgcs_</code>' from this library's types and functions.
