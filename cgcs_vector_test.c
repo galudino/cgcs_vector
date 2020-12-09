@@ -1,6 +1,6 @@
 /*!
-    \file       cgcs_vector_ptr_main.c
-    \brief      Driver source file to show an example of cgcs_vector_ptr
+    \file       cgcs_vector_test.c
+    \brief      Driver source file to show an example of cgcs_vector
 
     \author     Gemuele Aludino
     \date       05 Sep 2020
@@ -27,9 +27,8 @@
     THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#define using_cgcs_vptr               // removes cgcs_ prefix
-#define CGCS_VECTOR_PTR_SHORTNAMES    // reduces vptr_ prefix to v
-#include "cgcs_vector_ptr.h"
+#define USE_CGCS_VECTOR              // removes cgcs_ prefix
+#include "cgcs_vector.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -39,7 +38,7 @@
 /*
     These comparison functions won't be provided with the library,
     as they are trivial to write -- but they are provided here
-    to help demonstrate how vptr_t is used.
+    to help demonstrate how cgcs_vector is used.
 */
 static int cmp_cstr(const void *c0, const void *c1);
 static int cmp_int(const void *c0, const void *c1);
@@ -49,6 +48,10 @@ static int cmp_double(const void *c0, const void *c1);
     There are many things you can do with the foreach function,
     but the one you may use most commonly with foreach is
     freeing the memory for each pointer.
+
+    Any function with the prototype
+        void *function_name(void *argument)
+    can be used with the vforeach function.
 */
 static void print_cstr(void *arg);
 static void print_int(void *arg);
@@ -56,14 +59,19 @@ static void print_double(void *arg);
 static void free_cstr(void *arg);
 
 int main(int argc, const char *argv[]) {
-    // Creating a vptr_t on the heap.
-    // You can also do vptr_t *v = vptr_init(malloc(sizeof *v), size_value);
-    vptr_t *v = vptr_new(1);
+    // Note that we've used the #define USE_CGCS_VECTOR directive
+    // before #include "cgcs_vector.h", which lets us omit 'cgcs_'
+    // from all cgcslib identifiers.
+
+    // Creating a cgcs_vector on the heap.
+    // Another way to create a cgcs_vector on the heap is like this: 
+    // cgcs_vector *v = malloc(sizeof *v); cgcs_vinit(v, 1);
+    vector *v = vnew(1);
     // We set a capacity of 1 to show that the vector will resize as needed.
 
     // This will be a 'holding' place for the strings
     // we dynamically allocate before we transfer ownership over
-    // to vptr_t.
+    // to cgcs_vector.
     char *s = NULL;
 
     s = strdup("hello");
@@ -88,8 +96,8 @@ int main(int argc, const char *argv[]) {
     vforeach(v, print_cstr);
     puts("");
 
-    // Creating a vptr_t on the stack.
-    vptr_t tmp;
+    // Creating a cgcs_vector on the stack.
+    cgcs_vector tmp;
     vinit(&tmp, 3);
 
     const char *strings[] = { "ONE", "TWO", "THREE" };
@@ -101,7 +109,7 @@ int main(int argc, const char *argv[]) {
     // equivalent to vptr_insert(v, vptr_begin(v) + 3);
     vinsert_range(v, vbegin(v) + 3, vbegin(&tmp), vend(&tmp));
 
-    // We no longer need vptr_t tmp, so we call the deinit function on it
+    // We no longer need cgcs_vector tmp, so we call the deinit function on it
     // so its internal buffer can be freed.
     vdeinit(&tmp);
 
@@ -123,9 +131,9 @@ int main(int argc, const char *argv[]) {
     // Freeing all strings in v
     vforeach(v, free_cstr);
 
-    // You can use the delete macro on v,
-    // or do free(vptr_deinit(v));
-    vptr_delete(v);
+    // You can also do
+    // vdeinit(v); free(v);
+    vdelete(v);
 
     return 0;
 }
