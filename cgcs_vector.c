@@ -75,11 +75,10 @@ static inline void
 cgcs_vector_base_new_block_allocfn(struct cgcs_vector_base *base,
                                     size_t capacity,
                                     void *(*allocfn)(size_t)) {
-    voidptr *start = allocfn(sizeof *start * capacity);
-    assert(start);
-    memset(start, 0, sizeof *start * capacity);
+    base->m_start = allocfn(sizeof base->m_start * capacity);
+    assert(base->m_start);
+    memset(base->m_start, 0, sizeof *base->m_start * capacity);
 
-    base->m_start = start;
     base->m_finish = base->m_start;
     base->m_end_of_storage = base->m_start + capacity;
 }
@@ -115,12 +114,14 @@ static inline void
 cgcs_vector_base_resize_block_allocfreefn(struct cgcs_vector_base *base,
                                   size_t size, size_t capacity,
                                   void *(*allocfn)(size_t), void (*freefn)(void *)) {
-    voidptr *start = malloc(sizeof *start * capacity);
-    assert(start);
-    memcpy(start, base->m_start, sizeof *base->m_start * size);
-    freefn(base->m_start);
+    voidptr *old_start = base->m_start;
 
-    base->m_start = start;
+    base->m_start = allocfn(sizeof *base->m_start * capacity);
+    assert(base->m_start);
+    memcpy(base->m_start, old_start, sizeof *old_start * size);
+
+    freefn(old_start);
+
     base->m_finish = base->m_start + size;
     base->m_end_of_storage = base->m_start + capacity;
 }
