@@ -68,6 +68,26 @@ cgcs_vector_base_new_block(struct cgcs_vector_base *base,
     \brief
 
     \param[in]  base
+    \param[in]  capacity
+    \param[in]  allocfn
+ */
+static inline void
+cgcs_vector_base_new_block_allocfn(struct cgcs_vector_base *base,
+                                    size_t capacity,
+                                    void *(*allocfn)(size_t)) {
+    voidptr *start = allocfn(sizeof *start * capacity);
+    assert(start);
+    memset(start, 0, sizeof *start * capacity);
+
+    base->m_start = start;
+    base->m_finish = base->m_start;
+    base->m_end_of_storage = base->m_start + capacity;
+}
+
+/*!
+    \brief
+
+    \param[in]  base
     \param[in]  size
     \param[in]  capacity
 */
@@ -76,6 +96,29 @@ cgcs_vector_base_resize_block(struct cgcs_vector_base *base,
                                   size_t size, size_t capacity) {
     voidptr *start = realloc(base->m_start, sizeof *start * capacity);
     assert(start);
+
+    base->m_start = start;
+    base->m_finish = base->m_start + size;
+    base->m_end_of_storage = base->m_start + capacity;
+}
+
+/*!
+    \brief
+
+    \param[in]  base
+    \param[in]  size
+    \param[in]  capacity
+    \param[in]  allocfn
+    \param[in]  freefn
+*/
+static inline void
+cgcs_vector_base_resize_block_allocfreefn(struct cgcs_vector_base *base,
+                                  size_t size, size_t capacity,
+                                  void *(*allocfn)(size_t), void (*freefn)(void *)) {
+    voidptr *start = malloc(sizeof *start * capacity);
+    assert(start);
+    memcpy(start, base->m_start, sizeof *base->m_start * size);
+    freefn(base->m_start);
 
     base->m_start = start;
     base->m_finish = base->m_start + size;
@@ -108,6 +151,17 @@ void cgcs_vinit(cgcs_vector *self, size_t capacity) {
 /*!
     \brief
 
+    \param[in]     self
+    \param[in]     capacity
+*/
+void cgcs_vinit_allocfn(cgcs_vector *self, size_t capacity, void *(*allocfn)(size_t)) {
+    cgcs_vector_base_initialize(&(self->m_impl));
+    cgcs_vector_base_new_block_allocfn(&(self->m_impl), capacity, allocfn);
+}
+
+/*!
+    \brief
+
     \param[in]      self
 
     \return
@@ -120,6 +174,19 @@ void cgcs_vdeinit(cgcs_vector *self) {
     // using cgcs_vforeach -- or iterate over all elements manually
     // and free each pointer as needed.
     free(self->m_impl.m_start);
+    cgcs_vector_base_initialize(&(self->m_impl));
+}
+
+/*!
+    \brief
+
+    \param[in]      self
+    \param[in]      freefn
+
+    \return
+*/
+void cgcs_vdeinit_freefn(cgcs_vector *self, void (*freefn)(void *)) {
+    freefn(self->m_impl.m_start);
     cgcs_vector_base_initialize(&(self->m_impl));
 }
 
@@ -144,6 +211,27 @@ bool cgcs_vresize(cgcs_vector *self, size_t n) {
     \brief
 
     \param[in]  self
+    \param[in]  n
+    \param[in]  allocfn
+    \param[in]  freefn
+
+    \return
+*/
+bool cgcs_vresize_allocfreefn(cgcs_vector *self, size_t n, 
+                              void *(*allocfn)(size_t), void (*freefn)(void *)) {
+    if (n <= cgcs_vcapacity(self)) {
+        return false;
+    } else {
+        cgcs_vector_base_resize_block_allocfreefn(&(self->m_impl), cgcs_vsize(self), n, 
+                                                  allocfn, freefn);
+        return true;
+    }
+}
+
+/*!
+    \brief
+
+    \param[in]  self
 
     \return
 */
@@ -152,6 +240,23 @@ bool cgcs_vshrink_to_fit(cgcs_vector *self) {
     const size_t size = cgcs_vsize(self);
 
     return (capacity > size) ? cgcs_vresize(self, size) : false;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  allocfn
+    \param[in]  freefn
+
+    \return
+*/
+bool cgcs_vshrink_to_fit_allocfreefn(cgcs_vector *self, 
+                                     void *(*allocfn)(size_t), void (*freefn)(void *)) {
+    const size_t capacity = cgcs_vcapacity(self);
+    const size_t size = cgcs_vsize(self);
+
+    return (capacity > size) ? cgcs_vresize_allocfreefn(self, size, allocfn, freefn) : false;
 }
 
 /*!
@@ -167,6 +272,46 @@ cgcs_vector_iterator cgcs_vinsert(cgcs_vector *self, cgcs_vector_iterator it, co
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
         size_t position = it - self->m_impl.m_start;
         cgcs_vresize(self, cgcs_vcapacity(self) * 2);
+
+        // it must be updated if this vector is resized,
+        // since we use it's address in memmove.
+        //
+        // Without this reassignment, memmove will not work properly,
+        // because it is assumed that it points to some address within
+        // [ cgcs_vbegin(self), cgcs_vend(self) )
+        it = self->m_impl.m_start + position;
+    }
+
+    // memmove(dst, src, block size)
+    // We move everything from [it, m_finish) one block over right.
+    memmove(it + 1, it, sizeof *it * (self->m_impl.m_finish - it));
+
+    // We've made room for the new element, so we make the assignment now.
+    *(it) = *(void **)(valaddr);
+
+    // Finally, we advance the m_finish address one block.
+    ++self->m_impl.m_finish;
+
+    return it;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  it
+    \param[in]  valaddr
+    \param[in]  allocfn
+    \param[in]  freefn
+
+    \return
+*/
+cgcs_vector_iterator cgcs_vinsert_allocfreefn(cgcs_vector *self, cgcs_vector_iterator it,
+                                          const void *valaddr, 
+                                          void *(*allocfn)(size_t), void (*freefn)(void *)) {    
+    if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
+        size_t position = it - self->m_impl.m_start;
+        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
 
         // it must be updated if this vector is resized,
         // since we use it's address in memmove.
@@ -232,6 +377,48 @@ cgcs_vector_iterator cgcs_vinsert_range(cgcs_vector *self, cgcs_vector_iterator 
 
     \param[in]  self
     \param[in]  it
+    \param[in]  beg
+    \param[in]  end
+    \param[in]  allocfn
+    \param[in]  freefn
+
+    \return
+*/
+cgcs_vector_iterator cgcs_vinsert_range_allocfreefn(cgcs_vector *self,
+                                        cgcs_vector_iterator it,
+                                        cgcs_vector_iterator beg,
+                                        cgcs_vector_iterator end,
+                                        void *(*allocfn)(size_t),
+                                        void (*freefn)(void *)) {
+    const size_t count = end - beg;
+    size_t curr_capacity = cgcs_vcapacity(self);
+
+    if (cgcs_vsize(self) + count > curr_capacity) {
+        size_t position = it - self->m_impl.m_start;
+        cgcs_vresize_allocfreefn(self, curr_capacity * 2, allocfn, freefn);
+
+        // See cgcs_vinsert on why we update it
+        // if we resize the buffer.
+        it = self->m_impl.m_start + position;
+    }
+
+    // memmove(dst, src, block size)
+    // We move everything from [it, m_finish) (m_finish - it) blocks over right.
+    memmove(it + count, it, sizeof *it * (self->m_impl.m_finish - it));
+
+    // Now we copy the contents in range [beg, end) at position it.
+    memcpy(it, beg, sizeof *it * count);
+
+    // Finally, we advance the m_finish address count blocks.
+    self->m_impl.m_finish += count;
+
+    return it;}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  it
 
     \return
 */
@@ -291,6 +478,23 @@ void cgcs_vpushb(cgcs_vector *self, const void *valaddr) {
     \brief
 
     \param[in]  self
+    \param[in]  valaddr
+    \param[in]  allocfn
+    \param[in]  freefn
+*/
+void cgcs_vpushb_allocfreefn(cgcs_vector *self, const void *valaddr, 
+                             void *(*allocfn)(size_t), void (*freefn)(void *)) {
+    if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
+        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
+    }
+
+    *(self->m_impl.m_finish++) = *(void **)(valaddr);
+}
+
+/*!
+    \brief
+
+    \param[in]  self
 */
 void cgcs_vpopb(cgcs_vector *self) {
     if (cgcs_vempty(self) == false) {
@@ -308,6 +512,29 @@ void cgcs_vpopb(cgcs_vector *self) {
 void cgcs_vpushf(cgcs_vector *self, const void *valaddr) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
         cgcs_vresize(self, cgcs_vcapacity(self) * 2);
+    }
+
+    // memmove(dst, src, block size)    
+    memmove(self->m_impl.m_start + 1, 
+            self->m_impl.m_start, 
+            sizeof *self->m_impl.m_start * cgcs_vsize(self));
+
+    *(self->m_impl.m_start) = *(void **)(valaddr);
+    ++self->m_impl.m_finish;
+}
+
+/*!
+    \brief
+
+    \param[in]  self
+    \param[in]  valaddr
+    \param[in]  allocfn
+    \param[in]  freefn
+*/
+void cgcs_vpushf_allocfreefn(cgcs_vector *self, const void *valaddr,
+                             void *(*allocfn)(size_t), void (*freefn)(void *)) {
+    if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
+        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
     }
 
     // memmove(dst, src, block size)    
