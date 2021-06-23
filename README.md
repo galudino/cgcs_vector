@@ -5,28 +5,57 @@ A data structure for the C language; a buffer (vector) of pointers.
 <b>Note:</b><br>
 This document, and this repo -- is a work in progress.
 
+## Directories:
+### `demo` - target to demonstrate usage of `cgcs_vector`
+- <code>cgcs_vector_demo.c</code>
+  - demonstrates usage of `cgcs_vector`.
+- <code>CMakeLists.txt</code>
+  - `cmake` instructions on building this target
+
+### `src` - target for `cgcs_vector` library
+- <code>cgcs_vector.c</code>
+  - Implementation details
+- <code>cgcs_vector.h</code>
+  - Public declarations
+
 ## Building:
 
-The minimum version of C required is `C99`.
+Run the included `makebuilds` script to have `cmake`<br>
+create Unix-Makefile builds in the following modes:
+- `Debug`
+- `Release`
+- `MinSizeRel`
+- `RelWithDebInfo`
 
-Repository is currently being overhauled.
-A `CMakeLists.txt` file will be provided once maintenance is complete.
-
-For now, you may build the test client and `cgcs_vector` source code 
-with this `Terminal` command:
-
-```c
-cc -std=c99 -pedantic-errors -Wall -Werr -o main cgcs_vector_test.c cgcs_vector.c
+```
+% ./makebuilds
 ```
 
-If you want just the `cgcs_vector` library, (the `.o` file), you may use this `Terminal` command:
+A `build/make` subdirectory will be created with subdirectories<br>
+of the modes described above. 
 
-```c
-cc -std=c99 -pedantic-errors -Wall -Werror -c cgcs_vector.c -o cgcs_vector.o
+If we want to create a `Debug` build
+of our demo program (which will also build the `cgcs_vector` library):
+
+```
+make -C ./build/make/Debug/demo
 ```
 
-If using an IDE, simply bring over `cgcs_vector.h` and `cgcs_vector.c`
-into your project's IDE.
+Generally,
+```
+make -C ./build/make/[build-mode]/[target-name]
+```
+
+If you want to use an alternative build system, i.e. Xcode or Visual Studio<br>
+(see the list of supported generators on your system using `cmake -help`), invoke the following:
+```
+% cmake -S ./ -B ./build/[generator-name] -G "[generator-name]"
+```
+
+For example, for Xcode:
+```
+% cmake -S ./ -B ./build/xcode -G "Xcode"
+```
 
 ## Foreword on <code><b>struct</b> cgcs_vector</code>, aka <code>cgcs_vector</code>
 
