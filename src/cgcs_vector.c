@@ -586,8 +586,8 @@ void cgcs_vforeach(cgcs_vector *self, void (*func)(void *)) {
     cgcs_vector_iterator it = cgcs_vbegin(self);
     cgcs_vector_iterator end = cgcs_vend(self);
 
-    while (it < end) {
-        func(it++);
+    for (; it < end; it++) {
+        func(it);
     }
 }
 
@@ -605,8 +605,8 @@ int cgcs_vsearch(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
     cgcs_vector_iterator it = cgcs_vbegin(self);
     cgcs_vector_iterator end = cgcs_vend(self);
 
-    while (it < end) {
-        if (cmpfn(it++, valaddr) == 0) {
+    for (; it < end; it++) {
+        if (cmpfn(it, valaddr) == 0) {
             break;
         }
     }
@@ -629,7 +629,7 @@ int cgcs_vsearch_range(cgcs_vector *self, int (*cmpfn)(const void *, const void 
                       const void *valaddr, cgcs_vector_iterator beg, cgcs_vector_iterator end) {
     cgcs_vector_iterator self_end = cgcs_vend(self);
 
-    while (beg < end) {
+    for (; beg < end; beg++) {
         if (cmpfn(beg++, valaddr) == 0) {
             break;
         }
@@ -652,8 +652,8 @@ cgcs_vector_iterator cgcs_vfind(cgcs_vector *self, int (*cmpfn)(const void *, co
     cgcs_vector_iterator it = cgcs_vbegin(self);
     cgcs_vector_iterator end = cgcs_vend(self);
 
-    while (it < end) {
-        if (cmpfn(it++, valaddr) == 0) {
+    for (; it < end; it++) {
+        if (cmpfn(it, valaddr) == 0) {
             break;
         }
     }
@@ -676,8 +676,8 @@ cgcs_vector_iterator cgcs_vfind_range(cgcs_vector *self,
                             int (*cmpfn)(const void *, const void *),
                             const void *valaddr, cgcs_vector_iterator beg,
                             cgcs_vector_iterator end) {
-    while (beg < end) {
-        if (cmpfn(beg++, valaddr) == 0) {
+    for (; beg < end; beg++) {
+        if (cmpfn(beg, valaddr) == 0) {
             break;
         }
     }
@@ -706,8 +706,9 @@ void cgcs_vqsort(cgcs_vector *self, int (*cmpfn)(const void *, const void *)) {
     \param[in]  cmpfn
     \param[in]  pos
 */
-void cgcs_vqsort_position(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
-                         cgcs_vector_iterator pos) {
+void cgcs_vqsort_position(cgcs_vector *self, 
+                          int (*cmpfn)(const void *, const void *),
+                          cgcs_vector_iterator pos) {
     qsort(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,

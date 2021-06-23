@@ -475,7 +475,7 @@ typedef cgcs_vector_iterator vector_iterator;
 
 #define vsearch(s, c, a)                    cgcs_vsearch(s, c, a)
 #define vsearch_range(s, c, a, b, e)        cgcs_vsearch_range(s, c, a, b, e)
-#define vfind(self, cmpfn, addr)            cgcs_find(self, cmpfn, addr)
+#define vfind(self, cmpfn, addr)            cgcs_vfind(self, cmpfn, addr)
 #define vfind_range(s, c, a, b, e)          cgcs_vfind_range(s, c, a, b, e)
 
 #define vqsort(self, cmpfn)                 cgcs_vqsort(self, cmpfn)
