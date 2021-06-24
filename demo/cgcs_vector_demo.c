@@ -38,7 +38,10 @@ int main(int argc, const char *argv[]) {
 
     // Use vforeach to run a void (*)(void *) on each element
     printf("{ ");
-    vforeach(&v, charptr_print);
+    //vforeach(&v, charptr_print);
+    // Instead of using pointers-to-functions, use blocks
+    // (if your compiler/version of C supports it)
+    vforeach_b(&v, ^(void *arg) { printf(" %s ", *(char **)(arg)); });
     printf("}\n\n");
 
     // Memory for an element is allocated by the caller,
@@ -54,10 +57,15 @@ int main(int argc, const char *argv[]) {
     printf("}\n\n");
 
     printf("Sorting vector...\n");
-    vqsort(&v, charptr_compare);
+    //vqsort(&v, charptr_compare);
+    vqsort_b(&v,
+        ^(const void *a, const void *b) {
+            return strcmp(*(char **)(a), *(char **)(b));
+        });
 
     printf("{ ");
-    vforeach(&v, charptr_print);
+    //vforeach(&v, charptr_print);
+    vforeach_b(&v, ^(void *arg) { printf(" %s ", *(char **)(arg)); });
     printf("}\n\n");
 
     printf("Using iterator to traverse vector, printing elements one-by-one...\n");
