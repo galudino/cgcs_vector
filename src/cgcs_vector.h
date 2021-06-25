@@ -76,12 +76,8 @@ void cgcs_vinit(cgcs_vector *self, size_t capacity);
 void cgcs_vinit_allocfn(cgcs_vector *self, size_t capacity, 
                         void *(*allocfn)(size_t));
 
-void cgcs_vinit_alloc_b(cgcs_vector *self, size_t capacity,
-                          void *(^alloc_b)(size_t));
-
 void cgcs_vdeinit(cgcs_vector *self);
 void cgcs_vdeinit_freefn(cgcs_vector *self, void (*freefn)(void *));
-void cgcs_vdeinit_free_b(cgcs_vector *self, void (^free_b)(void *));
 
 static voidptr cgcs_vfront(cgcs_vector *self);
 static voidptr cgcs_vback(cgcs_vector *self);
@@ -95,14 +91,10 @@ static size_t cgcs_vcapacity(cgcs_vector *self);
 bool cgcs_vresize(cgcs_vector *self, size_t n);
 bool cgcs_vresize_allocfreefn(cgcs_vector *self, size_t n, 
                               void *(*allocfn)(size_t), void (*freefn)(void *));
-bool cgcs_vresize_allocfree_b(cgcs_vector *self, size_t n, 
-                              void *(^alloc_b)(size_t), void (^free_b)(void *));
 
 bool cgcs_vshrink_to_fit(cgcs_vector *self);
 bool cgcs_vshrink_to_fit_allocfreefn(cgcs_vector *self, 
                                      void *(*allocfn)(size_t), void (*freefn)(void *));
-bool cgcs_vshrink_to_fit_allocfree_b(cgcs_vector *self, 
-                                     void *(^alloc_b)(size_t), void (^free_b)(void *));
 
 static cgcs_vector_iterator cgcs_vbegin(cgcs_vector *self);
 static cgcs_vector_iterator cgcs_vend(cgcs_vector *self);
@@ -112,10 +104,6 @@ cgcs_vector_iterator cgcs_vinsert(cgcs_vector *self, cgcs_vector_iterator it,
 cgcs_vector_iterator cgcs_vinsert_allocfreefn(cgcs_vector *self, cgcs_vector_iterator it,
                                           const void *valaddr, 
                                           void *(*allocfn)(size_t), void (*freefn)(void *));
-cgcs_vector_iterator cgcs_vinsert_allocfree_b(cgcs_vector *self, cgcs_vector_iterator it,
-                                          const void *valaddr, 
-                                          void *(^alloc_b)(size_t), void (^free_b)(void *));
-
 cgcs_vector_iterator cgcs_vinsert_range(cgcs_vector *self,
                                         cgcs_vector_iterator it,
                                         cgcs_vector_iterator beg,
@@ -127,13 +115,6 @@ cgcs_vector_iterator cgcs_vinsert_range_allocfreefn(cgcs_vector *self,
                                         void *(*allocfn)(size_t),
                                         void (*freefn)(void *));
 
-cgcs_vector_iterator cgcs_vinsert_range_allocfree_b(cgcs_vector *self,
-                                        cgcs_vector_iterator it,
-                                        cgcs_vector_iterator beg,
-                                        cgcs_vector_iterator end,
-                                        void *(^alloc_b)(size_t),
-                                        void (^free_b)(void *));
-
 cgcs_vector_iterator cgcs_verase(cgcs_vector *self, cgcs_vector_iterator it);
 cgcs_vector_iterator cgcs_verase_range(cgcs_vector *self, cgcs_vector_iterator beg,
                                        cgcs_vector_iterator end);
@@ -141,16 +122,12 @@ cgcs_vector_iterator cgcs_verase_range(cgcs_vector *self, cgcs_vector_iterator b
 void cgcs_vpushb(cgcs_vector *self, const void *valaddr);
 void cgcs_vpushb_allocfreefn(cgcs_vector *self, const void *valaddr, 
                              void *(*allocfn)(size_t), void (*freefn)(void *));
-void cgcs_vpushb_allocfree_b(cgcs_vector *self, const void *valaddr, 
-                             void *(^alloc_b)(size_t), void (^free_b)(void *));
 
 void cgcs_vpopb(cgcs_vector *self);
 
 void cgcs_vpushf(cgcs_vector *self, const void *valaddr);
 void cgcs_vpushf_allocfreefn(cgcs_vector *self, const void *valaddr,
                              void *(*allocfn)(size_t), void (*freefn)(void *));
-void cgcs_vpushf_allocfree_b(cgcs_vector *self, const void *valaddr,
-                            void *(^alloc_b)(size_t), void (^free_b)(void *));
 
 void cgcs_vpopf(cgcs_vector *self);
 
@@ -220,11 +197,9 @@ void cgcs_vheapsort_position_b(cgcs_vector *self, int (^cmp_b)(const void *, con
 
 static cgcs_vector *cgcs_vnew(size_t capacity);
 static cgcs_vector *cgcs_vnew_allocfn(size_t capacity, void *(*allocfn)(size_t));
-static cgcs_vector *cgcs_vnew_alloc_b(size_t capacity, void *(^alloc_b)(size_t));
 
 static void cgcs_vdelete(cgcs_vector *self);
 static void cgcs_vdelete_freefn(cgcs_vector *self, void (*freefn)(void *));
-static void cgcs_vdelete_free_b(cgcs_vector *self, void (^free_b)(void *));
 
 /*!
     \brief
@@ -469,16 +444,6 @@ static inline cgcs_vector *cgcs_vnew_allocfn(size_t capacity, void *(*allocfn)(s
     return v;
 }
 
-static inline cgcs_vector *cgcs_vnew_alloc_b(size_t capacity, void *(^alloc_b)(size_t)) {
-    cgcs_vector *v = NULL;
-    
-    if ((v = alloc_b(sizeof *v))) {
-        cgcs_vinit_alloc_b(v, capacity, alloc_b);
-    }
-    
-    return v;
-}
-
 /*!
     \brief
  
@@ -498,11 +463,6 @@ static inline void cgcs_vdelete(cgcs_vector *self) {
 static inline void cgcs_vdelete_freefn(cgcs_vector *self, void (*freefn)(void *)) {
     cgcs_vdeinit_freefn(self, freefn);
     freefn(self);
-}
-
-static inline void cgcs_vdelete_free_b(cgcs_vector *self, void (^free_b)(void *)) {
-    cgcs_vdeinit_free_b(self, free_b);
-    free_b(self);
 }
 
 /*!
