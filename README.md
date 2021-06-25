@@ -80,7 +80,7 @@ or to create too many abstractions.
 In the <code>gcslib</code> repository, there is a subdirectory, <code>test__vptr</code> --<br>
 and this new repo is pretty much picking up where I left off with <code>test__vptr</code>.
 
-<code><b>struct</b> cgcs_vector</code>'s alias, or <code><b>typedef</b></code> is <code>cgcs_vector</code>.
+<code><b>struct</b> cgcs_vector</code>'s alias, or <code><b>typedef</b></code> is <code>vector_t</code>.
 
 ## How is it implemented
 
@@ -92,9 +92,9 @@ I have decided to implement <code>cgcs_vector</code> as follows<br>
 (The memory layout is inspired from the GCC implementation of <code>std::vector</code>)
 
 ```
-typedef struct cgcs_vector cgcs_vector;
+typedef struct cgcs_vector vector_t;
 typedef void *voidptr;                      
-typedef voidptr *cgcs_vector_iterator;
+typedef voidptr *vector_iterator_t;
 
 // The "vector" structure
 struct cgcs_vector {
@@ -108,9 +108,9 @@ struct cgcs_vector {
 <b>We are ultimately dealing with a buffer of pointers.<br>
 Each block is <code>sizeof(void *)</code> bytes large.</b>
 
-- ### <code><b>typedef struct</b> cgcs_vector cgcs_vector </code>
+- ### <code><b>typedef struct</b> cgcs_vector cgcs_vector_t</code>
 
-    We alias <code><b>struct</b> cgcs_vector</code> with <code>cgcs_vector</code>.
+    We alias <code><b>struct</b> cgcs_vector</code> with <code>vector_t</code>.
 
 - ### <code><b>typedef void *</b> voidptr</code>
 
@@ -125,11 +125,11 @@ Each block is <code>sizeof(void *)</code> bytes large.</b>
     If <code>m_finish</code> and <code>m_end_of_storage</code> are the same address,<br>
     the buffer will be full after using the space at <code>m_finish</code>.
 
-- ### <code><b>typedef</b> voidptr *cgcs_vector_iterator</code>
+- ### <code><b>typedef</b> voidptr *vector_iterator_t</code>
 
     Since we can do pointer arithmetic on a <code>voidptr *</code>, or <code>void **</code>,<br>
     we will alias it so that the user knows that it can be used as an iterator.
 
 ## Sample Usage
 
-TODO
+TODO - please see comments/documentation for now.
