@@ -4,27 +4,6 @@
 
     \author     Gemuele Aludino
     \date       05 Sep 2020
-    \copyright  Copyright © 2020 Gemuele Aludino
-
-    Copyright © 2020 Gemuele Aludino
-
-    Permission is hereby granted, free of charge, to any person obtaining
-    a copy of this software and associated documentation files (the "Software"),
-    to deal in the Software without restriction, including without limitation
-    the rights to use, copy, modify, merge, publish, distribute, sublicense,
-    and/or sell copies of the Software, and to permit persons to whom the
-    Software is furnished to do so, subject to the following conditions:
-
-    The above copyright notice and this permission notice shall be included
-    in all copies or substantial portions of the Software.
-
-    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-    EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
-    OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
-    IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-    DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
-    TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH
-    THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
 // TODO: Fill in all documentation stubs
@@ -144,7 +123,7 @@ cgcs_vector_base_full_capacity(struct cgcs_vector_base *base) {
     \param[in]     self
     \param[in]     capacity
 */
-void cgcs_vinit(cgcs_vector *self, size_t capacity) {
+void vector_init(vector_t *self, size_t capacity) {
     cgcs_vector_base_initialize(&(self->m_impl));
     cgcs_vector_base_new_block(&(self->m_impl), capacity);
 }
@@ -155,7 +134,7 @@ void cgcs_vinit(cgcs_vector *self, size_t capacity) {
     \param[in]     self
     \param[in]     capacity
 */
-void cgcs_vinit_allocfn(cgcs_vector *self, size_t capacity, void *(*allocfn)(size_t)) {
+void vector_init_alloc_fn(vector_t *self, size_t capacity, void *(*allocfn)(size_t)) {
     cgcs_vector_base_initialize(&(self->m_impl));
     cgcs_vector_base_new_block_allocfn(&(self->m_impl), capacity, allocfn);
 }
@@ -167,12 +146,12 @@ void cgcs_vinit_allocfn(cgcs_vector *self, size_t capacity, void *(*allocfn)(siz
 
     \return
 */
-void cgcs_vdeinit(cgcs_vector *self) {
+void vector_deinit(vector_t *self) {
     // Pointees are not managed by deinit.
     //
     // If you want to free the memory addressed by each pointer
     // in vptr's buffer, run a "destroy" function on each element
-    // using cgcs_vforeach -- or iterate over all elements manually
+    // using vector_foreach -- or iterate over all elements manually
     // and free each pointer as needed.
     free(self->m_impl.m_start);
     cgcs_vector_base_initialize(&(self->m_impl));
@@ -186,7 +165,7 @@ void cgcs_vdeinit(cgcs_vector *self) {
 
     \return
 */
-void cgcs_vdeinit_freefn(cgcs_vector *self, void (*freefn)(void *)) {
+void vector_deinit_free_fn(vector_t *self, void (*freefn)(void *)) {
     freefn(self->m_impl.m_start);
     cgcs_vector_base_initialize(&(self->m_impl));
 }
@@ -199,11 +178,11 @@ void cgcs_vdeinit_freefn(cgcs_vector *self, void (*freefn)(void *)) {
 
     \return
 */
-bool cgcs_vresize(cgcs_vector *self, size_t n) {
-    if (n <= cgcs_vcapacity(self)) {
+bool vector_resize(vector_t *self, size_t n) {
+    if (n <= vector_capacity(self)) {
         return false;
     } else {
-        cgcs_vector_base_resize_block(&(self->m_impl), cgcs_vsize(self), n);
+        cgcs_vector_base_resize_block(&(self->m_impl), vector_size(self), n);
         return true;
     }
 }
@@ -218,12 +197,12 @@ bool cgcs_vresize(cgcs_vector *self, size_t n) {
 
     \return
 */
-bool cgcs_vresize_allocfreefn(cgcs_vector *self, size_t n, 
+bool vector_resize_alloc_free_fn(vector_t *self, size_t n, 
                               void *(*allocfn)(size_t), void (*freefn)(void *)) {
-    if (n <= cgcs_vcapacity(self)) {
+    if (n <= vector_capacity(self)) {
         return false;
     } else {
-        cgcs_vector_base_resize_block_allocfreefn(&(self->m_impl), cgcs_vsize(self), n, 
+        cgcs_vector_base_resize_block_allocfreefn(&(self->m_impl), vector_size(self), n, 
                                                   allocfn, freefn);
         return true;
     }
@@ -236,11 +215,11 @@ bool cgcs_vresize_allocfreefn(cgcs_vector *self, size_t n,
 
     \return
 */
-bool cgcs_vshrink_to_fit(cgcs_vector *self) {
-    const size_t capacity = cgcs_vcapacity(self);
-    const size_t size = cgcs_vsize(self);
+bool vector_shrink_to_fit(vector_t *self) {
+    const size_t capacity = vector_capacity(self);
+    const size_t size = vector_size(self);
 
-    return (capacity > size) ? cgcs_vresize(self, size) : false;
+    return (capacity > size) ? vector_resize(self, size) : false;
 }
 
 /*!
@@ -252,12 +231,12 @@ bool cgcs_vshrink_to_fit(cgcs_vector *self) {
 
     \return
 */
-bool cgcs_vshrink_to_fit_allocfreefn(cgcs_vector *self, 
+bool vector_shrink_to_fit_alloc_free_fn(vector_t *self, 
                                      void *(*allocfn)(size_t), void (*freefn)(void *)) {
-    const size_t capacity = cgcs_vcapacity(self);
-    const size_t size = cgcs_vsize(self);
+    const size_t capacity = vector_capacity(self);
+    const size_t size = vector_size(self);
 
-    return (capacity > size) ? cgcs_vresize_allocfreefn(self, size, allocfn, freefn) : false;
+    return (capacity > size) ? vector_resize_alloc_free_fn(self, size, allocfn, freefn) : false;
 }
 
 /*!
@@ -269,17 +248,17 @@ bool cgcs_vshrink_to_fit_allocfreefn(cgcs_vector *self,
 
     \return
 */
-cgcs_vector_iterator cgcs_vinsert(cgcs_vector *self, cgcs_vector_iterator it, const void *valaddr) {
+vector_iterator_t vector_insert(vector_t *self, vector_iterator_t it, const void *valaddr) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
         size_t position = it - self->m_impl.m_start;
-        cgcs_vresize(self, cgcs_vcapacity(self) * 2);
+        vector_resize(self, vector_capacity(self) * 2);
 
         // it must be updated if this vector is resized,
         // since we use it's address in memmove.
         //
         // Without this reassignment, memmove will not work properly,
         // because it is assumed that it points to some address within
-        // [ cgcs_vbegin(self), cgcs_vend(self) )
+        // [ vector_begin(self), vector_end(self) )
         it = self->m_impl.m_start + position;
     }
 
@@ -307,19 +286,19 @@ cgcs_vector_iterator cgcs_vinsert(cgcs_vector *self, cgcs_vector_iterator it, co
 
     \return
 */
-cgcs_vector_iterator cgcs_vinsert_allocfreefn(cgcs_vector *self, cgcs_vector_iterator it,
+vector_iterator_t vector_insert_alloc_free_fn(vector_t *self, vector_iterator_t it,
                                           const void *valaddr, 
                                           void *(*allocfn)(size_t), void (*freefn)(void *)) {    
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
         size_t position = it - self->m_impl.m_start;
-        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
+        vector_resize_alloc_free_fn(self, vector_capacity(self) * 2, allocfn, freefn);
 
         // it must be updated if this vector is resized,
         // since we use it's address in memmove.
         //
         // Without this reassignment, memmove will not work properly,
         // because it is assumed that it points to some address within
-        // [ cgcs_vbegin(self), cgcs_vend(self) )
+        // [ vector_begin(self), vector_end(self) )
         it = self->m_impl.m_start + position;
     }
 
@@ -346,16 +325,16 @@ cgcs_vector_iterator cgcs_vinsert_allocfreefn(cgcs_vector *self, cgcs_vector_ite
 
     \return
 */
-cgcs_vector_iterator cgcs_vinsert_range(cgcs_vector *self, cgcs_vector_iterator it, cgcs_vector_iterator beg,
-                              cgcs_vector_iterator end) {
+vector_iterator_t vector_insert_range(vector_t *self, vector_iterator_t it, vector_iterator_t beg,
+                              vector_iterator_t end) {
     const size_t count = end - beg;
-    size_t curr_capacity = cgcs_vcapacity(self);
+    size_t curr_capacity = vector_capacity(self);
 
-    if (cgcs_vsize(self) + count > curr_capacity) {
+    if (vector_size(self) + count > curr_capacity) {
         size_t position = it - self->m_impl.m_start;
-        cgcs_vresize(self, curr_capacity * 2);
+        vector_resize(self, curr_capacity * 2);
 
-        // See cgcs_vinsert on why we update it
+        // See vector_insert on why we update it
         // if we resize the buffer.
         it = self->m_impl.m_start + position;
     }
@@ -385,20 +364,20 @@ cgcs_vector_iterator cgcs_vinsert_range(cgcs_vector *self, cgcs_vector_iterator 
 
     \return
 */
-cgcs_vector_iterator cgcs_vinsert_range_allocfreefn(cgcs_vector *self,
-                                        cgcs_vector_iterator it,
-                                        cgcs_vector_iterator beg,
-                                        cgcs_vector_iterator end,
+vector_iterator_t vector_insert_range_alloc_free_fn(vector_t *self,
+                                        vector_iterator_t it,
+                                        vector_iterator_t beg,
+                                        vector_iterator_t end,
                                         void *(*allocfn)(size_t),
                                         void (*freefn)(void *)) {
     const size_t count = end - beg;
-    size_t curr_capacity = cgcs_vcapacity(self);
+    size_t curr_capacity = vector_capacity(self);
 
-    if (cgcs_vsize(self) + count > curr_capacity) {
+    if (vector_size(self) + count > curr_capacity) {
         size_t position = it - self->m_impl.m_start;
-        cgcs_vresize_allocfreefn(self, curr_capacity * 2, allocfn, freefn);
+        vector_resize_alloc_free_fn(self, curr_capacity * 2, allocfn, freefn);
 
-        // See cgcs_vinsert on why we update it
+        // See vector_insert on why we update it
         // if we resize the buffer.
         it = self->m_impl.m_start + position;
     }
@@ -424,8 +403,8 @@ cgcs_vector_iterator cgcs_vinsert_range_allocfreefn(cgcs_vector *self,
 
     \return
 */
-cgcs_vector_iterator cgcs_verase(cgcs_vector *self, cgcs_vector_iterator it) {
-    if (cgcs_vempty(self) == false) {
+vector_iterator_t vector_erase(vector_t *self, vector_iterator_t it) {
+    if (vector_empty(self) == false) {
         const size_t move_element_count = self->m_impl.m_finish - it;
         // memmove(dst, src, block size)
         // We move everything from [it + 1, m_finish) one block over to the left.
@@ -447,8 +426,8 @@ cgcs_vector_iterator cgcs_verase(cgcs_vector *self, cgcs_vector_iterator it) {
 
     \return
 */
-cgcs_vector_iterator cgcs_verase_range(cgcs_vector *self, cgcs_vector_iterator beg, cgcs_vector_iterator end) {
-    if (cgcs_vempty(self) == false) {
+vector_iterator_t vector_erase_range(vector_t *self, vector_iterator_t beg, vector_iterator_t end) {
+    if (vector_empty(self) == false) {
         const size_t move_element_count = self->m_impl.m_finish - beg;
         const size_t count = end - beg;
         // memmove(dst, src, block size)
@@ -468,9 +447,9 @@ cgcs_vector_iterator cgcs_verase_range(cgcs_vector *self, cgcs_vector_iterator b
     \param[in]  self
     \param[in]  valaddr
 */
-void cgcs_vpushb(cgcs_vector *self, const void *valaddr) {
+void vector_push_back(vector_t *self, const void *valaddr) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        cgcs_vresize(self, cgcs_vcapacity(self) * 2);
+        vector_resize(self, vector_capacity(self) * 2);
     }
 
     *(self->m_impl.m_finish++) = *(void **)(valaddr);
@@ -484,10 +463,10 @@ void cgcs_vpushb(cgcs_vector *self, const void *valaddr) {
     \param[in]  allocfn
     \param[in]  freefn
 */
-void cgcs_vpushb_allocfreefn(cgcs_vector *self, const void *valaddr, 
+void vector_push_back_alloc_free_fn(vector_t *self, const void *valaddr, 
                              void *(*allocfn)(size_t), void (*freefn)(void *)) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
+        vector_resize_alloc_free_fn(self, vector_capacity(self) * 2, allocfn, freefn);
     }
 
     *(self->m_impl.m_finish++) = *(void **)(valaddr);
@@ -498,8 +477,8 @@ void cgcs_vpushb_allocfreefn(cgcs_vector *self, const void *valaddr,
 
     \param[in]  self
 */
-void cgcs_vpopb(cgcs_vector *self) {
-    if (cgcs_vempty(self) == false) {
+void vector_pop_back(vector_t *self) {
+    if (vector_empty(self) == false) {
         // We simply move m_finish one block to the left.
         --self->m_impl.m_finish;
     }
@@ -511,15 +490,15 @@ void cgcs_vpopb(cgcs_vector *self) {
     \param[in]  self
     \param[in]  valaddr
 */
-void cgcs_vpushf(cgcs_vector *self, const void *valaddr) {
+void vector_push_front(vector_t *self, const void *valaddr) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        cgcs_vresize(self, cgcs_vcapacity(self) * 2);
+        vector_resize(self, vector_capacity(self) * 2);
     }
 
     // memmove(dst, src, block size)    
     memmove(self->m_impl.m_start + 1, 
             self->m_impl.m_start, 
-            sizeof *self->m_impl.m_start * cgcs_vsize(self));
+            sizeof *self->m_impl.m_start * vector_size(self));
 
     *(self->m_impl.m_start) = *(void **)(valaddr);
     ++self->m_impl.m_finish;
@@ -533,16 +512,16 @@ void cgcs_vpushf(cgcs_vector *self, const void *valaddr) {
     \param[in]  allocfn
     \param[in]  freefn
 */
-void cgcs_vpushf_allocfreefn(cgcs_vector *self, const void *valaddr,
+void vector_push_front_alloc_free_fn(vector_t *self, const void *valaddr,
                              void *(*allocfn)(size_t), void (*freefn)(void *)) {
     if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        cgcs_vresize_allocfreefn(self, cgcs_vcapacity(self) * 2, allocfn, freefn);
+        vector_resize_alloc_free_fn(self, vector_capacity(self) * 2, allocfn, freefn);
     }
 
     // memmove(dst, src, block size)    
     memmove(self->m_impl.m_start + 1, 
             self->m_impl.m_start, 
-            sizeof *self->m_impl.m_start * cgcs_vsize(self));
+            sizeof *self->m_impl.m_start * vector_size(self));
 
     *(self->m_impl.m_start) = *(void **)(valaddr);
     ++self->m_impl.m_finish;
@@ -553,13 +532,13 @@ void cgcs_vpushf_allocfreefn(cgcs_vector *self, const void *valaddr,
 
     \param[in]  self
 */
-void cgcs_vpopf(cgcs_vector *self) {
-    if (cgcs_vempty(self) == false) {
+void vector_pop_front(vector_t *self) {
+    if (vector_empty(self) == false) {
         // memmove(dst, src, block size)
         // We move everything from [m_start + 1, m_finish) one block over to the left.
         memmove(self->m_impl.m_start, 
                 self->m_impl.m_start + 1, 
-                sizeof *self->m_impl.m_start * cgcs_vsize(self) - 1);
+                sizeof *self->m_impl.m_start * vector_size(self) - 1);
 
         // Finally, we decrement the m_finish address one block.
         --self->m_impl.m_finish;
@@ -571,9 +550,9 @@ void cgcs_vpopf(cgcs_vector *self) {
 
     \param[in]  self
 */
-void cgcs_vclear(cgcs_vector *self) {
+void vector_clear(vector_t *self) {
     memset(self->m_impl.m_start, '\0',
-           cgcs_vsize(self) * sizeof *self->m_impl.m_start);
+           vector_size(self) * sizeof *self->m_impl.m_start);
     self->m_impl.m_finish = self->m_impl.m_start;
 }
 
@@ -583,18 +562,18 @@ void cgcs_vclear(cgcs_vector *self) {
     \param[in]  self
     \param[in]  func
 */
-void cgcs_vforeach(cgcs_vector *self, void (*func)(void *)) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+void vector_foreach(vector_t *self, void (*func)(void *)) {
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         func(it);
     }
 }
 
-void cgcs_vforeach_b(cgcs_vector *self, void (^block)(void *)) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+void vector_foreach_b(vector_t *self, void (^block)(void *)) {
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         block(it);
@@ -610,10 +589,10 @@ void cgcs_vforeach_b(cgcs_vector *self, void (^block)(void *)) {
 
     \return
 */
-int cgcs_vsearch(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
+int vector_search(vector_t *self, int (*cmpfn)(const void *, const void *),
                 const void *valaddr) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         if (cmpfn(it, valaddr) == 0) {
@@ -624,9 +603,9 @@ int cgcs_vsearch(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
     return it == end ? (-1) : (int)(end - it);
 }
 
-int cgcs_vsearch_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *), const void *valaddr) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+int vector_search_b(vector_t *self, int (^cmp_b)(const void *, const void *), const void *valaddr) {
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         if (cmp_b(it, valaddr) == 0) {
@@ -648,9 +627,9 @@ int cgcs_vsearch_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *), 
 
     \return
 */
-int cgcs_vsearch_range(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
-                      const void *valaddr, cgcs_vector_iterator beg, cgcs_vector_iterator end) {
-    cgcs_vector_iterator self_end = cgcs_vend(self);
+int vector_search_range(vector_t *self, int (*cmpfn)(const void *, const void *),
+                      const void *valaddr, vector_iterator_t beg, vector_iterator_t end) {
+    vector_iterator_t self_end = vector_end(self);
 
     for (; beg < end; beg++) {
         if (cmpfn(beg++, valaddr) == 0) {
@@ -661,11 +640,11 @@ int cgcs_vsearch_range(cgcs_vector *self, int (*cmpfn)(const void *, const void 
     return (beg == end) ? -1 : (int)(self_end - beg);
 }
 
-int cgcs_vsearch_range_b(cgcs_vector *self,
+int vector_search_range_b(vector_t *self,
                        int (^cmp_b)(const void *, const void *),
-                       const void *valaddr, cgcs_vector_iterator beg,
-                       cgcs_vector_iterator end) {
-    cgcs_vector_iterator self_end = cgcs_vend(self);
+                       const void *valaddr, vector_iterator_t beg,
+                       vector_iterator_t end) {
+    vector_iterator_t self_end = vector_end(self);
 
     for (; beg < end; beg++) {
         if (cmp_b(beg++, valaddr) == 0) {
@@ -685,10 +664,10 @@ int cgcs_vsearch_range_b(cgcs_vector *self,
 
     \return
 */
-cgcs_vector_iterator cgcs_vfind(cgcs_vector *self, int (*cmpfn)(const void *, const void *),
+vector_iterator_t vector_find(vector_t *self, int (*cmpfn)(const void *, const void *),
                       const void *valaddr) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         if (cmpfn(it, valaddr) == 0) {
@@ -699,11 +678,11 @@ cgcs_vector_iterator cgcs_vfind(cgcs_vector *self, int (*cmpfn)(const void *, co
     return (it == end) ? NULL : it;
 }
 
-cgcs_vector_iterator cgcs_vfind_b(cgcs_vector *self,
+vector_iterator_t vector_find_b(vector_t *self,
                                 int (^cmp_b)(const void *, const void *),
                                 const void *valaddr) {
-    cgcs_vector_iterator it = cgcs_vbegin(self);
-    cgcs_vector_iterator end = cgcs_vend(self);
+    vector_iterator_t it = vector_begin(self);
+    vector_iterator_t end = vector_end(self);
 
     for (; it < end; it++) {
         if (cmp_b(it, valaddr) == 0) {
@@ -725,10 +704,10 @@ cgcs_vector_iterator cgcs_vfind_b(cgcs_vector *self,
 
     \return
 */
-cgcs_vector_iterator cgcs_vfind_range(cgcs_vector *self,
+vector_iterator_t vector_find_range(vector_t *self,
                             int (*cmpfn)(const void *, const void *),
-                            const void *valaddr, cgcs_vector_iterator beg,
-                            cgcs_vector_iterator end) {
+                            const void *valaddr, vector_iterator_t beg,
+                            vector_iterator_t end) {
     for (; beg < end; beg++) {
         if (cmpfn(beg, valaddr) == 0) {
             break;
@@ -738,10 +717,10 @@ cgcs_vector_iterator cgcs_vfind_range(cgcs_vector *self,
     return (beg == end) ? NULL : beg;
 }
 
-cgcs_vector_iterator cgcs_vfind_range_b(cgcs_vector *self,
+vector_iterator_t vector_find_range_b(vector_t *self,
                                       int (^cmp_b)(const void *, const void *),
-                                      const void *valaddr, cgcs_vector_iterator beg,
-                                      cgcs_vector_iterator end) {
+                                      const void *valaddr, vector_iterator_t beg,
+                                      vector_iterator_t end) {
     for (; beg < end; beg++) {
         if (cmp_b(beg, valaddr) == 0) {
             break;
@@ -757,17 +736,17 @@ cgcs_vector_iterator cgcs_vfind_range_b(cgcs_vector *self,
     \param[in]  self
     \param[in]  cmpfn
 */
-void cgcs_vqsort(cgcs_vector *self, int (*cmpfn)(const void *, const void *)) {
+void vector_qsort(vector_t *self, int (*cmpfn)(const void *, const void *)) {
     qsort(self->m_impl.m_start,
-          cgcs_vsize(self),
+          vector_size(self),
           sizeof *self->m_impl.m_start,
           cmpfn);
 }
 
-void cgcs_vqsort_b(cgcs_vector *self,
+void vector_qsort_b(vector_t *self,
                  int (^cmp_b)(const void *, const void *)) {
     qsort_b(self->m_impl.m_start,
-          cgcs_vsize(self),
+          vector_size(self),
           sizeof *self->m_impl.m_start,
           cmp_b);
 }
@@ -779,62 +758,62 @@ void cgcs_vqsort_b(cgcs_vector *self,
     \param[in]  cmpfn
     \param[in]  pos
 */
-void cgcs_vqsort_position(cgcs_vector *self, 
+void vector_qsort_position(vector_t *self, 
                           int (*cmpfn)(const void *, const void *),
-                          cgcs_vector_iterator pos) {
+                          vector_iterator_t pos) {
     qsort(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
           cmpfn);
 }
 
-void cgcs_vqsort_position_b(cgcs_vector *self,
+void vector_qsort_position_b(vector_t *self,
                           int (^cmp_b)(const void *, const void *),
-                          cgcs_vector_iterator pos) {
+                          vector_iterator_t pos) {
     qsort_b(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
           cmp_b);
 }
 
-void cgcs_vmergesort(cgcs_vector *self, int (*cmpfn)(const void *, const void *)) {
-    mergesort(self->m_impl.m_start, cgcs_vsize(self), sizeof *self->m_impl.m_start, cmpfn);
+void vector_mergesort(vector_t *self, int (*cmpfn)(const void *, const void *)) {
+    mergesort(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmpfn);
 }
 
-void cgcs_vmergesort_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *)) {
-    mergesort_b(self->m_impl.m_start, cgcs_vsize(self), sizeof *self->m_impl.m_start, cmp_b);
+void vector_mergesort_b(vector_t *self, int (^cmp_b)(const void *, const void *)) {
+    mergesort_b(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmp_b);
 }
 
-void cgcs_vmergesort_position(cgcs_vector *self, int (*cmpfn)(const void *, const void *), cgcs_vector_iterator pos) {
+void vector_mergesort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos) {
     mergesort(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
           cmpfn); 
 }
 
-void cgcs_vmergesort_position_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *), cgcs_vector_iterator pos) {
+void vector_mergesort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos) {
     mergesort_b(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
           cmp_b);
 }
 
-void cgcs_vheapsort(cgcs_vector *self, int (*cmpfn)(const void *, const void *)) {
-    heapsort(self->m_impl.m_start, cgcs_vsize(self), sizeof *self->m_impl.m_start, cmpfn);    
+void vector_heapsort(vector_t *self, int (*cmpfn)(const void *, const void *)) {
+    heapsort(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmpfn);    
 }
 
-void cgcs_vheapsort_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *)) {
-    heapsort_b(self->m_impl.m_start, cgcs_vsize(self), sizeof *self->m_impl.m_start, cmp_b);
+void vector_heapsort_b(vector_t *self, int (^cmp_b)(const void *, const void *)) {
+    heapsort_b(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmp_b);
 }
 
-void cgcs_vheapsort_position(cgcs_vector *self, int (*cmpfn)(const void *, const void *), cgcs_vector_iterator pos) {
+void vector_heapsort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos) {
     heapsort(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
           cmpfn); 
 }
 
-void cgcs_vheapsort_position_b(cgcs_vector *self, int (^cmp_b)(const void *, const void *), cgcs_vector_iterator pos) {
+void vector_heapsort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos) {
     heapsort_b(pos,
           self->m_impl.m_finish - pos,
           sizeof *self->m_impl.m_start,
