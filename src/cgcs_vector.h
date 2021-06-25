@@ -103,12 +103,6 @@ void vector_push_back_alloc_free_fn(vector_t *self, const void *valaddr,
 
 void vector_pop_back(vector_t *self);
 
-void vector_push_front(vector_t *self, const void *valaddr);
-void vector_push_front_alloc_free_fn(vector_t *self, const void *valaddr,
-                             void *(*allocfn)(size_t), void (*freefn)(void *));
-
-void vector_pop_front(vector_t *self);
-
 void vector_clear(vector_t *self);
 
 void vector_foreach(vector_t *self, void (*func)(void *));

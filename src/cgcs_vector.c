@@ -488,67 +488,6 @@ void vector_pop_back(vector_t *self) {
     \brief
 
     \param[in]  self
-    \param[in]  valaddr
-*/
-void vector_push_front(vector_t *self, const void *valaddr) {
-    if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        vector_resize(self, vector_capacity(self) * 2);
-    }
-
-    // memmove(dst, src, block size)    
-    memmove(self->m_impl.m_start + 1, 
-            self->m_impl.m_start, 
-            sizeof *self->m_impl.m_start * vector_size(self));
-
-    *(self->m_impl.m_start) = *(void **)(valaddr);
-    ++self->m_impl.m_finish;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-    \param[in]  valaddr
-    \param[in]  allocfn
-    \param[in]  freefn
-*/
-void vector_push_front_alloc_free_fn(vector_t *self, const void *valaddr,
-                             void *(*allocfn)(size_t), void (*freefn)(void *)) {
-    if (cgcs_vector_base_full_capacity(&(self->m_impl))) {
-        vector_resize_alloc_free_fn(self, vector_capacity(self) * 2, allocfn, freefn);
-    }
-
-    // memmove(dst, src, block size)    
-    memmove(self->m_impl.m_start + 1, 
-            self->m_impl.m_start, 
-            sizeof *self->m_impl.m_start * vector_size(self));
-
-    *(self->m_impl.m_start) = *(void **)(valaddr);
-    ++self->m_impl.m_finish;
-}
-
-/*!
-    \brief
-
-    \param[in]  self
-*/
-void vector_pop_front(vector_t *self) {
-    if (vector_empty(self) == false) {
-        // memmove(dst, src, block size)
-        // We move everything from [m_start + 1, m_finish) one block over to the left.
-        memmove(self->m_impl.m_start, 
-                self->m_impl.m_start + 1, 
-                sizeof *self->m_impl.m_start * vector_size(self) - 1);
-
-        // Finally, we decrement the m_finish address one block.
-        --self->m_impl.m_finish;
-    }
-}
-
-/*!
-    \brief
-
-    \param[in]  self
 */
 void vector_clear(vector_t *self) {
     memset(self->m_impl.m_start, '\0',
