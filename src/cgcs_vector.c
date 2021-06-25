@@ -697,20 +697,20 @@ void vector_qsort_b(vector_t *self,
     \param[in]  cmpfn
     \param[in]  pos
 */
-void vector_qsort_position(vector_t *self, 
+void vector_qsort_range(vector_t *self,
                           int (*cmpfn)(const void *, const void *),
-                          vector_iterator_t pos) {
+                          vector_iterator_t pos, vector_iterator_t end) {
     qsort(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmpfn);
 }
 
-void vector_qsort_position_b(vector_t *self,
+void vector_qsort_range_b(vector_t *self,
                           int (^cmp_b)(const void *, const void *),
-                          vector_iterator_t pos) {
+                          vector_iterator_t pos, vector_iterator_t end) {
     qsort_b(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmp_b);
 }
@@ -723,16 +723,16 @@ void vector_mergesort_b(vector_t *self, int (^cmp_b)(const void *, const void *)
     mergesort_b(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmp_b);
 }
 
-void vector_mergesort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos) {
+void vector_mergesort_range(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end) {
     mergesort(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmpfn); 
 }
 
-void vector_mergesort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos) {
+void vector_mergesort_range_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end) {
     mergesort_b(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmp_b);
 }
@@ -745,16 +745,16 @@ void vector_heapsort_b(vector_t *self, int (^cmp_b)(const void *, const void *))
     heapsort_b(self->m_impl.m_start, vector_size(self), sizeof *self->m_impl.m_start, cmp_b);
 }
 
-void vector_heapsort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos) {
+void vector_heapsort_range(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end) {
     heapsort(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmpfn); 
 }
 
-void vector_heapsort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos) {
+void vector_heapsort_range_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end) {
     heapsort_b(pos,
-          self->m_impl.m_finish - pos,
+          end - pos,
           sizeof *self->m_impl.m_start,
           cmp_b);
 }

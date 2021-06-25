@@ -145,27 +145,28 @@ vector_iterator_t vector_find_range_b(vector_t *self,
 
 void vector_qsort(vector_t *self,
                  int (*cmpfn)(const void *, const void *));
+
 void vector_qsort_b(vector_t *self,
                  int (^cmp_b)(const void *, const void *));
 
-void vector_qsort_position(vector_t *self,
+void vector_qsort_range(vector_t *self,
                           int (*cmpfn)(const void *, const void *),
-                          vector_iterator_t pos);
-void vector_qsort_position_b(vector_t *self,
+                          vector_iterator_t pos, vector_iterator_t end);
+void vector_qsort_range_b(vector_t *self,
                           int (^cmp_b)(const void *, const void *),
-                          vector_iterator_t pos);
+                          vector_iterator_t pos, vector_iterator_t end);
 
 void vector_mergesort(vector_t *self, int (*cmpfn)(const void *, const void *));
 void vector_mergesort_b(vector_t *self, int (^cmp_b)(const void *, const void *));
 
-void vector_mergesort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos);
-void vector_mergesort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos);
+void vector_mergesort_range(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end);
+void vector_mergesort_range_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end);
 
 void vector_heapsort(vector_t *self, int (*cmpfn)(const void *, const void *));
 void vector_heapsort_b(vector_t *self, int (^cmp_b)(const void *, const void *));
 
-void vector_heapsort_position(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos);
-void vector_heapsort_position_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos);
+void vector_heapsort_range(vector_t *self, int (*cmpfn)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end);
+void vector_heapsort_range_b(vector_t *self, int (^cmp_b)(const void *, const void *), vector_iterator_t pos, vector_iterator_t end);
 
 static vector_t *vector_new(size_t capacity);
 static vector_t *vector_new_alloc_fn(size_t capacity, void *(*allocfn)(size_t));
