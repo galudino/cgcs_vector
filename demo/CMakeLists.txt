@@ -8,4 +8,5 @@ set(CMAKE_C_STANDARD ${C_STANDARD})
 set(CMAKE_C_FLAGS ${CFLAGS})
 
 add_executable("cgcs_vector_demo" "cgcs_vector_demo.c")
+target_compile_options("cgcs_vector_demo" PUBLIC "-fblocks")
 target_link_libraries("cgcs_vector_demo" LINK_PUBLIC "cgcs_vector")

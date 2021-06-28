@@ -14,14 +14,14 @@ rm -rf ./build/make/Release/* || true
 rm -rf ./build/make/RelWithDebInfo/* || true
 rm -rf ./build/make/MinSizeRel/* || true || true
 
-cmake -S ./ -B ./build/make/Debug -DCMAKE_BUILD_TYPE=Debug
+cmake -S ./ -B ./build/make/Debug -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 echo ""
 
-cmake -S ./ -B ./build/make/Release -DCMAKE_BUILD_TYPE=Release
+cmake -S ./ -B ./build/make/Release -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 echo ""
 
-cmake -S ./ -B ./build/make/RelWithDebInfo -DCMAKE_BUILD_TYPE=RelWithDebInfo
+cmake -S ./ -B ./build/make/RelWithDebInfo -DCMAKE_BUILD_TYPE=RelWithDebInfo -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 echo ""
 
-cmake -S ./ -B ./build/make/MinSizeRel -DCMAKE_BUILD_TYPE=MinSizeRel
+cmake -S ./ -B ./build/make/MinSizeRel -DCMAKE_BUILD_TYPE=MinSizeRel -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++
 echo ""
